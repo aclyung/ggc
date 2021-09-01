@@ -1,2 +1,2 @@
 # gpp
-gpp is a programming language influenced by Golang
+gpp is a programming language influenced by Golang.
