@@ -1,0 +1,39 @@
+package main
+
+fun main() {
+    a := 1
+    var b int = 344
+    var c string = "asdasd"
+    private var g int = 9
+    const a := 4.5
+    public var (
+        k int
+        i bool
+        j float
+    )
+    type foo struct {
+        gg := 500
+    }
+
+    private type hh<type T> struct{
+        v := 
+
+    }
+
+    public fun gen<type T> hh<T> {
+        l := hh<T>{}
+
+    } 
+
+    oper (f foo) operator+(tar foo) foo {
+        r := &foo{}
+        r.gg = f.gg + tar.gg
+        return *r
+    }
+    ?====> random name method ex: op1
+
+    m := foo{} + foo{}
+    ?=====> m:= foo{}.operator+(foo{})
+
+    
+}
