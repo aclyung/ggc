@@ -1,18 +1,37 @@
 package file
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"almeng.com/ggc/general"
 )
 
-var print func(interface{}) = func(i interface{}) {
-	fmt.Println(i)
+type File []string
+
+func NewFile() File {
+	return File{}
 }
 
-func WalkPath(path string) ([]string, error) {
+// ================= Recursions ==================
+
+func (f File) WalkPath(path string) File {
+	return walkPath(path)
+}
+
+func (f File) FileGet(ext string) File {
+	fil := *new(File)
+	for _, v := range f {
+		if filterExt(v, ext) {
+			fil = append(fil, v)
+		}
+	}
+	return fil
+}
+
+// =============== Pure Functions =================
+
+func walkPath(path string) []string {
 	var files []string
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
@@ -20,26 +39,27 @@ func WalkPath(path string) ([]string, error) {
 		}
 		return nil
 	})
-	return files, err
+	general.ErrCheck(err)
+	return files
 }
 
-func FilterExt(path string, ext string) bool {
+func filterExt(path string, ext string) bool {
 	if filepath.Ext(path) != ext {
 		return false
 	}
 	return true
 }
 
-func FileGet() []string {
-	var file_ext []string
-	files, err := WalkPath("./")
-	general.ErrCheck(err)
-	for _, file := range files {
-		if FilterExt(file, ".ggc") {
-			file_ext = append(file_ext, file)
-			fmt.Println(file)
-		}
-	}
-	print(file_ext)
-	return file_ext
-}
+//
+// func FileGet() []string {
+// 	var file_ext []string
+// 	files := walkPath("./")
+// 	for _, file := range files {
+// 		if filterExt(file, ".ggc") {
+// 			file_ext = append(file_ext, file)
+// 			fmt.Println(file)
+// 		}
+// 	}
+// 	print(file_ext)
+// 	return file_ext
+// }
