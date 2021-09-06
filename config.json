@@ -1,0 +1,6 @@
+{
+    "name" : "ggc compiler",
+    "version" : "0.01-alpha",
+    "path" : "./",
+    "extension" : ".go"
+}

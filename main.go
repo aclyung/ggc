@@ -1,14 +1,21 @@
 package main
 
 import (
-	"fmt"
-
 	"almeng.com/ggc/file"
 )
 
+const config = "./config.json"
+
 func main() {
-	fmt.Println("ggc compiler version 0.1")
+	conf := file.GetConfig(config)
+	conf.PrintInfo()
+	path := conf.Path
+	ext := conf.Ext
+
 	fileMan := file.NewFile()
-	files := fileMan.WalkPath("./").FileGet(".go")
-	fmt.Println(files)
+	compfiles := fileMan.WalkPath(path).ExtractExt(ext)
+	files := *compfiles.Open()
+	for _, v := range files {
+		fileMan.ReadLine(v)
+	}
 }

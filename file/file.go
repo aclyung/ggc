@@ -1,6 +1,9 @@
 package file
 
 import (
+	"bufio"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -9,17 +12,54 @@ import (
 
 type File []string
 
-func NewFile() File {
-	return File{}
+type Config struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Path    string `json:"path"`
+	Ext     string `json:"extension"`
+}
+
+func GetConfig(path string) *Config {
+	conf := &Config{}
+	confFile := OpenFile(path)
+	json.NewDecoder(confFile).Decode(&conf)
+	return conf
+}
+
+func (c Config) PrintInfo() {
+	fmt.Println(c.Name, "version", c.Version)
+}
+
+func NewFile() *File {
+	return &File{}
 }
 
 // ================= Recursions ==================
+func (f File) ReadLine(file *os.File) {
+	buf := newBuffer(file)
+	for buf.Scan() {
+		fmt.Println(buf.Text())
+		general.ErrCheck(buf.Err())
+	}
+}
+
+func (f File) OpenFile(path string) *os.File {
+	return OpenFile(path)
+}
+
+func (f *File) Open() *[]*os.File {
+	files := *new([]*os.File)
+	for _, v := range *f {
+		files = append(files, OpenFile(v))
+	}
+	return &files
+}
 
 func (f File) WalkPath(path string) File {
 	return walkPath(path)
 }
 
-func (f File) FileGet(ext string) File {
+func (f File) ExtractExt(ext string) File {
 	fil := *new(File)
 	for _, v := range f {
 		if filterExt(v, ext) {
@@ -30,6 +70,9 @@ func (f File) FileGet(ext string) File {
 }
 
 // =============== Pure Functions =================
+func newBuffer(file *os.File) *bufio.Scanner {
+	return bufio.NewScanner(file)
+}
 
 func walkPath(path string) []string {
 	var files []string
@@ -43,23 +86,15 @@ func walkPath(path string) []string {
 	return files
 }
 
+func OpenFile(path string) *os.File {
+	file, err := os.Open(path)
+	general.ErrCheck(err)
+	return file
+}
+
 func filterExt(path string, ext string) bool {
 	if filepath.Ext(path) != ext {
 		return false
 	}
 	return true
 }
-
-//
-// func FileGet() []string {
-// 	var file_ext []string
-// 	files := walkPath("./")
-// 	for _, file := range files {
-// 		if filterExt(file, ".ggc") {
-// 			file_ext = append(file_ext, file)
-// 			fmt.Println(file)
-// 		}
-// 	}
-// 	print(file_ext)
-// 	return file_ext
-// }
