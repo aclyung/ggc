@@ -1,0 +1,18 @@
+package token
+
+const (
+	TOKEN_ID = iota
+	TOKEN_EQUALS
+	TOKEN_EQUALS_ASSIGN
+	TOKEN_COLON
+	TOKEN_INT
+	TOKEN_LPAREN
+	TOKEN_RPAREN
+	TOKEN_LBRACE
+	TOKEN_RBRACE
+)
+
+type TOKEN_STRUCT struct {
+	value string
+	token int
+}

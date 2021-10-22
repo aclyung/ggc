@@ -7,6 +7,7 @@ import (
 const config = "./config.json"
 
 func main() {
+
 	conf := file.GetConfig(config)
 	conf.PrintInfo()
 	path := conf.Path
