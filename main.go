@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"almeng.com/ggc/file"
 )
 
@@ -17,6 +19,9 @@ func main() {
 	compfiles := fileMan.WalkPath(path).ExtractExt(ext)
 	files := *compfiles.Open()
 	for _, v := range files {
+		fmt.Println("\nFile name: ",v.Name())
 		fileMan.ReadLine(v)
 	}
 }
+
+
