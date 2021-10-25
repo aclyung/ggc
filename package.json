@@ -1,0 +1,18 @@
+{
+  "name": "ggc",
+  "version": "0.0.1",
+  "description": "glang compiler",
+  "repository": "https://github.com/aclyung/ggc",
+  "author": "almeng <aclyung1234556@gmail.com>",
+  "license": "GPL-3.0",
+  "private": false,
+  "scripts": {
+    "a": "sh -c 'go build -o $0'",
+    "build": "sh -c 'yarn $0 && yarn $1 && yarn '",
+    "linux": "env GOOS=linux",
+    "darwin": "env GOOS=darwin",
+    "windows": "env GOOS=windows",
+    "amd64": "env GOARCH=amd64",
+    "arm64": "env GOARCH=arm64"
+  }
+}
