@@ -8,12 +8,9 @@
   "private": false,
   "scripts": {
     "a": "sh -c 'go build -o $0'",
-    "build": "sh -c 'yarn $0 && yarn $1 && yarn build-$0 $0 $1'",
-    "build-windows": "sh -c 'go build -o build/glang_$0-$1.exe'",
-    "linux": "env GOOS=linux",
-    "darwin": "env GOOS=darwin",
-    "windows": "env GOOS=windows",
-    "amd64": "env GOARCH=amd64",
-    "arm64": "env GOARCH=arm64"
+    "build": "sh -c 'yarn $0 $0 $1'",
+    "windows": "sh -c 'env GOOS=$0 GOARCH=$1 && go build -o build/glang_$0-$1.exe'",
+    "linux": "sh -c 'env GOOS=$0 GOARCH=$1 && go build -o build/glang_$0-$1'",
+    "darwin": "sh -c 'env GOOS=$0 GOARCH=$1 && go build -o build/glang_$0-$1'"
   }
 }
