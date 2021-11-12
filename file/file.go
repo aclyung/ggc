@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"almeng.com/ggc/general"
+	"almeng.com/glang/general"
 )
 
 type File []string
