@@ -56,5 +56,3 @@ func main() {
 }
 
 // func a(g interface{}) { fmt.Print(g) }
-
-
