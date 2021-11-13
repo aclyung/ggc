@@ -8,6 +8,7 @@ import (
 
 // Token is the set of lexical tokens of the Go programming language.
 type Token int
+
 // The list of tokens.
 const (
 	// Special tokens
@@ -196,7 +197,7 @@ var tokens = [...]string{
 	SEMICOLON: ";",
 	COLON:     ":",
 
-	BREAK:    "break",
+	BREAK: "break",
 	//CASE:     "case",
 	//CHAN:     "chan",
 	CONST: "const",
@@ -210,27 +211,27 @@ var tokens = [...]string{
 
 	//DEFAULT:     "default",
 	//DEFER: "defer",
-	ELSE:  "else",
+	ELSE: "else",
 	//FALLTHROUGH: "fallthrough",
 	FOR: "for",
 
-	FUN:    "fun",
+	FUN: "fun",
 	// GO:     "go",
 	// GOTO:   "goto",
-	IF:     "if",
+	IF: "if",
 	// IMPORT: "import",
 
 	// INTERFACE: "interface",
 	// MAP:       "map",
 	// PACKAGE:   "package",
 	// RANGE:     "range",
-	RETURN:    "return",
+	RETURN: "return",
 
 	//SELECT: "select",
 	// STRUCT: "struct",
 	//SWITCH: "switch",
 	// TYPE: "type",
-	VAR:  "var",
+	VAR: "var",
 }
 
 // String returns the string corresponding to the token tok.
@@ -285,13 +286,24 @@ func (op Token) Precedence() int {
 	return LowestPrec
 }
 
-var keywords map[string]Token
+var keywords, operators map[string]Token
 
 func init() {
 	keywords = make(map[string]Token)
+	operators = make(map[string]Token)
 	for i := keyword_beg + 1; i < keyword_end; i++ {
 		keywords[tokens[i]] = i
 	}
+	for i := operator_beg + 1; i < operator_end; i++ {
+		operators[tokens[i]] = i
+	}
+}
+
+func LookOperUp(oper string) Token {
+	if tok, is_oper := operators[oper]; is_oper {
+		return tok
+	}
+	return ILLEGAL
 }
 
 // Lookup maps an identifier to its keyword token or IDENT (if not a keyword).
@@ -336,6 +348,10 @@ func IsKeyword(name string) bool {
 	return ok
 }
 
+// func IsValid(text string) bool {
+// 	_, ok := tokens[text]
+// 	return ok
+// }
 // IsIdentifier reports whether name is a Go identifier, that is, a non-empty
 // string made up of letters, digits, and underscores, where the first character
 // is not a digit. Keywords are not identifiers.

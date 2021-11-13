@@ -7,3 +7,7 @@ func ErrCheck(err error) {
 		log.Fatal(err.Error())
 	}
 }
+
+func Err(msg string) string {
+	return "ERROR: " + msg
+}
