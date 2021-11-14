@@ -1,7 +1,8 @@
 glang
-###Go-like programming language
+======
+### Go-like programming language
 
-Implementations
+# Implementations
 - [ ] Expressions
   - [X] Number Expressions 
   - [X] Binary Expressions
