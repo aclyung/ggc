@@ -27,7 +27,7 @@ const (
 	STRING // "abc"
 	literal_end
 
-	operator_beg
+	Operator_beg
 	// Operators and delimiters
 	ADD // +
 	SUB // -
@@ -84,7 +84,7 @@ const (
 	RBRACE    // }
 	SEMICOLON // ;
 	COLON     // :
-	operator_end
+	Operator_end
 
 	keyword_beg
 	// Keywords
@@ -294,7 +294,7 @@ func init() {
 	for i := keyword_beg + 1; i < keyword_end; i++ {
 		keywords[tokens[i]] = i
 	}
-	for i := operator_beg + 1; i < operator_end; i++ {
+	for i := Operator_beg + 1; i < Operator_end; i++ {
 		operators[tokens[i]] = i
 	}
 }
@@ -325,7 +325,7 @@ func (tok Token) IsLiteral() bool { return literal_beg < tok && tok < literal_en
 // IsOperator returns true for tokens corresponding to operators and
 // delimiters; it returns false otherwise.
 //
-func (tok Token) IsOperator() bool { return operator_beg < tok && tok < operator_end }
+func (tok Token) IsOperator() bool { return Operator_beg < tok && tok < Operator_end }
 
 // IsKeyword returns true for tokens corresponding to keywords;
 // it returns false otherwise.

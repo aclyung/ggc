@@ -1,13 +1,11 @@
 package lexer
 
 import (
-	"fmt"
+	"almeng.com/glang/glang/general"
+	node2 "almeng.com/glang/glang/parser/node"
+	"almeng.com/glang/glang/token"
 	"strconv"
 	"unicode"
-
-	"almeng.com/glang/general"
-	"almeng.com/glang/parser/node"
-	"almeng.com/glang/token"
 )
 
 type SyntaxToken struct {
@@ -17,27 +15,30 @@ type SyntaxToken struct {
 	Value    interface{}
 }
 type Lexer struct {
-	text     string
-	position int
+	text        string
+	position    int
+	Diagnostics []general.Diag
 }
 
 const EOFCHAR = '\000'
 
-func (tok SyntaxToken) GetChildren() []node.ExpressionSyntax {
-	return []node.ExpressionSyntax{}
+func (tok SyntaxToken) GetChildren() []node2.ExpressionSyntax {
+	return []node2.ExpressionSyntax{}
 }
 
-func (tok SyntaxToken) Type() node.Type {
-	return node.SyntaxToken
+func (tok SyntaxToken) Type() node2.Type {
+	if tok.Token.IsOperator() {
+		return node2.Type(tok.Token-token.Operator_beg) + node2.Oper_beg
+	}
+	return node2.SyntaxToken
 }
 
-func (tok SyntaxToken) Kind() token.Token{
+func (tok SyntaxToken) Kind() token.Token {
 	return tok.Token
 }
 
 func NewLexer(text string) Lexer {
-	fmt.Print()
-	return Lexer{text: text, position: 0}
+	return Lexer{text: text, position: 0, Diagnostics: make([]general.Diag, 0)}
 }
 
 func (lexer *Lexer) current() rune {
@@ -99,14 +100,30 @@ func (lexer *Lexer) NextToken() *SyntaxToken {
 
 	if unicode.IsDigit(lexer.current()) {
 		beg := lexer.position
+		tok := token.INT
 		for unicode.IsDigit(lexer.current()) {
 			lexer.next()
 		}
+		if lexer.current() == '.' {
+			lexer.next()
+			tok = token.FLOAT
+			for unicode.IsDigit(lexer.current()) {
+				lexer.next()
+			}
+		}
 		text := lexer.text[beg:lexer.position]
-		value, err := strconv.Atoi(text)
-		general.ErrCheck(err)
-		return Token(token.INT, beg, text, value)
-
+		if tok == token.INT {
+			value, err := strconv.ParseInt(text, 10, 64)
+			if err != nil {
+				lexer.Diagnose("ERROR: the Number is not Valid int64.", general.ERROR)
+			}
+			return Token(tok, beg, text, value)
+		}
+		value, err := strconv.ParseFloat(text, 8)
+		if err != nil {
+			lexer.Diagnose("ERROR: the Number is not Valid float64.", general.ERROR)
+		}
+		return Token(tok, beg, text, value)
 	}
 	if unicode.IsSpace(lexer.current()) {
 		for unicode.IsSpace(lexer.current()) {
@@ -131,25 +148,15 @@ func (lexer *Lexer) NextToken() *SyntaxToken {
 		}
 		return Token(tok, pos, cur, nil)
 	}
-	return Token(token.ILLEGAL, pos, lexer.text[pos:pos+1], nil)
-	// switch cur {
-	// case '+':
-	// 	return Token(token.ADD, pos, "+", nil)
-	// case '-':
-	// 	return Token(token.SUB, pos, "-", nil)
-	// case '*':
-	// 	return Token(token.MUL, pos, "*", nil)
-	// case '/':
-	// 	return Token(token.QUO, pos, "/", nil)
-	// case '(':
-	// 	return Token(token.LPAREN, pos, "(", nil)
-	// case ')':
-	// 	return Token(token.RPAREN, pos, ")", nil)
-	// default:
-	// 	return Token(token.ILLEGAL, pos, lexer.text[pos:pos+1], nil)
-	// }
-}
 
+	lexer.Diagnose("ERROR: Illegal Charater '"+string(cur)+"'", general.ERROR)
+	return Token(token.ILLEGAL, pos, lexer.text[pos:pos+1], nil)
+
+}
+func (lex *Lexer) Diagnose(text string, l general.Level) {
+	diag := general.Diag{text, l}
+	lex.Diagnostics = append(lex.Diagnostics, diag)
+}
 func Token(token token.Token, position int, text string, value interface{}) *SyntaxToken {
 
 	return &SyntaxToken{

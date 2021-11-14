@@ -1,13 +1,12 @@
 package file
 
 import (
+	"almeng.com/glang/glang/general"
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"almeng.com/glang/general"
 )
 
 type File []string
