@@ -1,2 +1,2 @@
 # glang
-glang is a programming language influenced by Golang.
+Go-like programming language
