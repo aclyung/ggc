@@ -1,4 +1,4 @@
-glang
+# Glang
 ======
 ### Go-like programming language
 
