@@ -2,13 +2,14 @@ package evaluator
 
 import (
 	"almeng.com/glang/glang/lexer"
-	node2 "almeng.com/glang/glang/parser/node"
-	syntax2 "almeng.com/glang/glang/syntax"
+	"almeng.com/glang/glang/parser/node"
+	"almeng.com/glang/glang/syntax"
+	"almeng.com/glang/glang/syntax/expression"
 	"almeng.com/glang/glang/token"
 	"fmt"
 )
 
-func castNumber(l node2.ExpressionSyntax, r node2.ExpressionSyntax) (lfloat float64, lint int64, rfloat float64, rint int64, isInt bool) {
+func castNumber(l node.ExpressionSyntax, r node.ExpressionSyntax) (lfloat float64, lint int64, rfloat float64, rint int64, isInt bool) {
 	lfloat, rfloat, lint, rint = 0, 0, 0, 0
 	left, right := l.(lexer.SyntaxToken), r.(lexer.SyntaxToken)
 	var lval, rval interface{} = left.Value, right.Value
@@ -44,14 +45,14 @@ func returnToken(tok token.Token, val interface{}) lexer.SyntaxToken {
 	return *lexer.Token(tok, 0, fmt.Sprint(resval), resval)
 }
 
-func ExpressionEvaluation(root node2.ExpressionSyntax) node2.ExpressionSyntax {
+func ExpressionEvaluation(root node.ExpressionSyntax) node.ExpressionSyntax {
 	expType := root.Type()
 	switch expType {
-	case node2.ExpNum:
-		val := root.(*syntax2.NumberExpressionSyntax)
+	case expression.ExpNum:
+		val := root.(*syntax.Literal)
 		return val.NumberToken
-	case node2.ExpBi:
-		nod := root.(*syntax2.BinaryExpressionSyntax)
+	case expression.ExpBi:
+		nod := root.(*syntax.BinaryExpressionSyntax)
 		oper := nod.OperatorToken.Kind()
 		left, right := nod.Left, nod.Right
 		left = ExpressionEvaluation(left)
@@ -99,8 +100,8 @@ func ExpressionEvaluation(root node2.ExpressionSyntax) node2.ExpressionSyntax {
 		default:
 			return nil
 		}
-	case node2.ExpParen:
-		return ExpressionEvaluation(root.(*syntax2.ParenExpressionSyntax).Expression)
+	case expression.ExpParen:
+		return ExpressionEvaluation(root.(*syntax.ParenExpressionSyntax).Expression)
 	}
 	return nil
 }

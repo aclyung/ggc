@@ -2,7 +2,8 @@ package lexer
 
 import (
 	"almeng.com/glang/glang/general"
-	node2 "almeng.com/glang/glang/parser/node"
+	"almeng.com/glang/glang/parser/node"
+	"almeng.com/glang/glang/syntax/expression"
 	"almeng.com/glang/glang/token"
 	"strconv"
 	"unicode"
@@ -22,15 +23,12 @@ type Lexer struct {
 
 const EOFCHAR = '\000'
 
-func (tok SyntaxToken) GetChildren() []node2.ExpressionSyntax {
-	return []node2.ExpressionSyntax{}
+func (tok SyntaxToken) GetChildren() []node.ExpressionSyntax {
+	return []node.ExpressionSyntax{}
 }
 
-func (tok SyntaxToken) Type() node2.Type {
-	if tok.Token.IsOperator() {
-		return node2.Type(tok.Token-token.Operator_beg) + node2.Oper_beg
-	}
-	return node2.SyntaxToken
+func (tok SyntaxToken) Type() expression.Type {
+	return expression.SyntaxToken
 }
 
 func (tok SyntaxToken) Kind() token.Token {

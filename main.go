@@ -6,6 +6,7 @@ import (
 	"almeng.com/glang/glang/lexer"
 	"almeng.com/glang/glang/parser/evaluator"
 	node2 "almeng.com/glang/glang/parser/node"
+	"almeng.com/glang/glang/syntax/expression"
 	"bufio"
 	"fmt"
 	"os"
@@ -27,7 +28,7 @@ func pprint(nod node2.ExpressionSyntax, indent string, isLast bool) {
 	fmt.Print(mark)
 	nodeType := nod.Type()
 	fmt.Print(nodeType, " ")
-	if nodeType == node2.SyntaxToken {
+	if nodeType == expression.SyntaxToken {
 		val := nod.(lexer.SyntaxToken)
 		if val.Value != nil {
 			fmt.Print(" ", val.Token, " | ", val.Value)
@@ -97,26 +98,6 @@ func main() {
 
 			fmt.Println(time.Since(start))
 		}
-		//	lex := lexer.NewLexer(line)
-		//	for {
-		//		tok := lex.NextToken()
-		//		if tok == nil {
-		//			continue
-		//		}
-		//		if tok.Token == token.EOF {
-		//			fmt.Println("EOF")
-		//			break
-		//		}
-		//		fmt.Print(tok.Token.String(), ": ", tok.Text)
-		//		if tok.Value != nil {
-		//			fmt.Print(" | ", tok.Value)
-		//		}
-		//		fmt.Println()
-		//	}
-		//}
-
-		// a("asda")
 	}
 
-	// func a(g interface{}) { fmt.Print(g) }
 }

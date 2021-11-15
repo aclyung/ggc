@@ -43,6 +43,12 @@ func Parser(text string) *parser {
 	return pars
 }
 
+func (p *parser) Parse() tree.SyntaxTree {
+	exp := p.parseExpression()
+	eoftok := p.MatchToken(token.EOF)
+	return tree.NewSyntaxTree(p.Diagnostics, exp, eoftok)
+}
+
 // Returns current Token and Moves forward
 func (p *parser) NextToken() lexer.SyntaxToken {
 	current := p.current()
@@ -55,7 +61,7 @@ func (p *parser) Diagnose(text string, l general.Level) {
 	p.Diagnostics = append(p.Diagnostics, diag)
 }
 
-func (p *parser) Match(tok token.Token) lexer.SyntaxToken {
+func (p *parser) MatchToken(tok token.Token) lexer.SyntaxToken {
 	cur := p.current()
 	if cur.Kind() == tok {
 		return p.NextToken()
@@ -114,16 +120,16 @@ func (p *parser) ParsePrevExpression() node.ExpressionSyntax {
 	case token.LPAREN:
 		left := p.NextToken()
 		express := p.parseExpression()
-		right := p.Match(token.RPAREN)
+		right := p.MatchToken(token.RPAREN)
 		return syntax2.NewParenExpressionSyntax(left, express, right)
 	case token.INT:
-		numTok = p.Match(token.INT)
+		numTok = p.MatchToken(token.INT)
 	case token.FLOAT:
-		numTok = p.Match(token.FLOAT)
+		numTok = p.MatchToken(token.FLOAT)
 	default:
-		numTok = p.Match(token.EOF)
+		numTok = p.MatchToken(token.EOF)
 	}
-	return syntax2.NewNumberExpressionSyntax(numTok)
+	return syntax2.NewliteralExpressionSyntax(numTok)
 }
 
 func (pars *parser) current() lexer.SyntaxToken { return pars.peek(0) }
@@ -135,12 +141,6 @@ func (pars *parser) peek(offset int) lexer.SyntaxToken {
 	}
 
 	return pars.tokens[index]
-}
-
-func (p *parser) Parse() tree.SyntaxTree {
-	exp := p.ParseTerm()
-	eoftok := p.Match(token.EOF)
-	return tree.NewSyntaxTree(p.Diagnostics, exp, eoftok)
 }
 
 // func Parser(file os.File) string {
