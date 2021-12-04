@@ -17,6 +17,9 @@ func (b *BoundLiteralExpression) Kind() boundNode.BoundNodeKind {
 }
 
 func (b *BoundLiteralExpression) Type() reflect.Kind {
+	if *b == InvalidLiteraExpression {
+		return reflect.Invalid
+	}
 	return reflect.TypeOf(b.Value).Kind()
 }
 

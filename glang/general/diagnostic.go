@@ -41,6 +41,14 @@ func (d *Diags) UndefinedBinaryOperator(span TextSpan.TextSpan, oper string, lef
 	d.Diagnose(span, "Binary Operator '"+oper+"' is not defined for types "+left+" and "+right, ERROR)
 }
 
+func (d *Diags) VariableTypeMisMatch(span TextSpan.TextSpan, name string, varType string, expType string) {
+	d.Diagnose(span, "Variable '"+name+"' is "+varType+", not "+expType, ERROR)
+}
+
+func (d *Diags) UndefinedIdentifier(span TextSpan.TextSpan, name string) {
+	d.Diagnose(span, "Undefined identifier '"+name+"'", ERROR)
+}
+
 func (d *Diags) UndefinedUnaryOperator(span TextSpan.TextSpan, oper string, operand string) {
 	d.Diagnose(span, "Binary Operator '"+oper+"' is not defined for type "+operand, ERROR)
 }

@@ -45,7 +45,7 @@ func Parser(text string) *parser {
 }
 
 func (p *parser) Parse() tree.Tree {
-	exp := p.parseExpression(0)
+	exp := p.ParseExpression(0)
 	eoftok := p.MatchToken(token.EOF)
 	return tree.NewSyntaxTree(p.Diag, exp, eoftok)
 }

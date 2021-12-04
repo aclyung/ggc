@@ -8,6 +8,8 @@ const (
 	ExpBinary
 	ExpUnary
 	ExpParen
+	ExpAssign
+	ExpName
 	Token
 	type_end
 )
@@ -17,6 +19,8 @@ var NodeType = [...]string{
 	ExpBinary:  "BinaryExpressionNode",
 	ExpUnary:   "UnaryExpressionNode",
 	ExpParen:   "ParenthesisExpressionNode",
+	ExpAssign:  "VariableAssignExpressionNode",
+	ExpName:    "IdentifierExpressionNode",
 	Token:      "SyntaxTokenNode",
 }
 

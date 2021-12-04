@@ -4,6 +4,7 @@ import (
 	"almeng.com/glang/binding"
 	"almeng.com/glang/binding/boundNode"
 	_ "almeng.com/glang/expression"
+	"almeng.com/glang/general"
 	_ "almeng.com/glang/lexer"
 	_ "almeng.com/glang/syntax"
 	_ "almeng.com/glang/token"
@@ -13,14 +14,16 @@ import (
 
 type Evaluator struct {
 	root boundNode.BoundExpression
+	vars *map[string]boundNode.BoundExpression
+	diag general.Diags
 }
 
-func NewEvaluator(root boundNode.BoundExpression) *Evaluator {
-	return &Evaluator{root}
+func NewEvaluator(root boundNode.BoundExpression, vars *map[string]boundNode.BoundExpression) *Evaluator {
+	return &Evaluator{root, vars, general.NewDiag()}
 }
 
 func (e *Evaluator) Evaluate() boundNode.BoundExpression {
-	return ExpressionEvaluation(e.root)
+	return e.ExpressionEvaluation(e.root)
 }
 
 func castNumber(l boundNode.BoundExpression, r boundNode.BoundExpression) (lfloat float64, lint int64, rfloat float64, rint int64, isInt bool) {
@@ -54,15 +57,27 @@ func returnToken(val interface{}) boundNode.BoundExpression {
 	return binding.NewBoundLiteralExpression(val)
 }
 
-func ExpressionEvaluation(root boundNode.BoundExpression) boundNode.BoundExpression {
+func (e *Evaluator) ExpressionEvaluation(root boundNode.BoundExpression) boundNode.BoundExpression {
+	vars := *(e.vars)
 	expType := root.Kind()
 	switch expType {
 	case boundNode.Literal:
 		val := root.(*binding.BoundLiteralExpression)
 		return val
+	case boundNode.Variable:
+		BoundVar := root.(*binding.BoundVariableExpression)
+		name := BoundVar.Name
+		val := vars[name]
+		return val
+	case boundNode.Assign:
+		assign := root.(*binding.BoundAssignmentExpression)
+		val := e.ExpressionEvaluation(assign.Expression)
+		vars[assign.Name] = val
+		return &binding.InvalidLiteraExpression
+
 	case boundNode.Unary:
 		u := root.(*binding.BoundUnaryExpression)
-		operand := ExpressionEvaluation(u.Operand)
+		operand := e.ExpressionEvaluation(u.Operand)
 		switch u.Oper.OperKind {
 		case binding.Identity:
 			return operand
@@ -85,8 +100,8 @@ func ExpressionEvaluation(root boundNode.BoundExpression) boundNode.BoundExpress
 		nod := root.(*binding.BoundBinaryExpression)
 		var oper binding.BoundBinaryOperKind = nod.Oper.Oper
 		left, right := nod.Left, nod.Right
-		left = ExpressionEvaluation(left)
-		right = ExpressionEvaluation(right)
+		left = e.ExpressionEvaluation(left)
+		right = e.ExpressionEvaluation(right)
 
 		if binding.IsLogical(oper) {
 			l, r := left.(*binding.BoundLiteralExpression).Value, right.(*binding.BoundLiteralExpression).Value

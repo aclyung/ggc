@@ -6,7 +6,7 @@ import (
 	"almeng.com/glang/token"
 )
 
-func (p *parser) parseExpression(parentPrecedence int) syntax.ExpressionSyntax {
+func (p *parser) parseBinaryExpression(parentPrecedence int) syntax.ExpressionSyntax {
 	var left syntax.ExpressionSyntax
 	uPrec := p.current().Kind().Precedence()
 	switch p.current().Kind() {
@@ -18,7 +18,7 @@ func (p *parser) parseExpression(parentPrecedence int) syntax.ExpressionSyntax {
 	}
 	if uPrec != token.LowestPrec && uPrec >= parentPrecedence {
 		oper := p.NextToken()
-		operand := p.parseExpression(uPrec)
+		operand := p.parseBinaryExpression(uPrec)
 		left = expression.NewUnaryExpressionSyntax(oper, operand)
 	} else {
 		left = p.ParsePrevExpression()
@@ -29,10 +29,25 @@ func (p *parser) parseExpression(parentPrecedence int) syntax.ExpressionSyntax {
 			break
 		}
 		oper := p.NextToken()
-		right := p.parseExpression(precedence)
+		right := p.parseBinaryExpression(precedence)
 		left = expression.NewBinaryExpressionSyntax(left, oper, right)
 	}
 	return left
+}
+
+func (p *parser) ParseExpression(parentPrecedence int) syntax.ExpressionSyntax {
+	return p.ParseAssignmentExpression(parentPrecedence)
+}
+
+func (p *parser) ParseAssignmentExpression(parentPrecedence int) syntax.ExpressionSyntax {
+	pars := *p
+	if pars.NextToken().Kind() == token.IDENT && pars.NextToken().Kind() == token.ASSIGN {
+		ident := p.NextToken()
+		operTok := p.NextToken()
+		right := p.ParseAssignmentExpression(0)
+		return expression.NewAssigmentExpressionSyntax(ident, operTok, right)
+	}
+	return p.parseBinaryExpression(0)
 }
 
 func (p *parser) ParsePrevExpression() syntax.ExpressionSyntax {
@@ -42,7 +57,7 @@ func (p *parser) ParsePrevExpression() syntax.ExpressionSyntax {
 	switch tok {
 	case token.LPAREN:
 		left := p.NextToken()
-		express := p.parseExpression(0)
+		express := p.ParseExpression(0)
 		right := p.MatchToken(token.RPAREN)
 		return expression.NewParenExpressionSyntax(left, express, right)
 	case token.BOOL:
@@ -52,6 +67,9 @@ func (p *parser) ParsePrevExpression() syntax.ExpressionSyntax {
 		numTok = p.MatchToken(token.INT)
 	case token.FLOAT:
 		numTok = p.MatchToken(token.FLOAT)
+	case token.IDENT:
+		ident := p.NextToken()
+		return expression.NewNameExpressionSyntax(ident)
 	default:
 		numTok = p.MatchToken(token.EOF)
 	}

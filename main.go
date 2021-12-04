@@ -2,6 +2,7 @@ package main
 
 import (
 	"almeng.com/glang/ast"
+	"almeng.com/glang/binding/boundNode"
 	"almeng.com/glang/compile"
 	"almeng.com/glang/expression"
 	"almeng.com/glang/general"
@@ -15,7 +16,6 @@ import (
 const config = "./config.json"
 
 func pprint(nod syntax.ExpressionSyntax, indent string, isLast bool) {
-
 	var mark string
 
 	if isLast {
@@ -65,6 +65,8 @@ func main() {
 	// }
 	show := true
 	tsPromt := map[bool]string{true: "Showing parse trees", false: "Not showing parse trees"}
+
+	vars := &map[string]boundNode.BoundExpression{}
 	for {
 		fmt.Print(">")
 		input := bufio.NewReader((os.Stdin))
@@ -83,7 +85,7 @@ func main() {
 		start := time.Now()
 		tree := ast.ParseTree(line)
 		compiler := compile.NewCompiler(tree)
-		result := compiler.Evaluate()
+		result := compiler.Evaluate(vars)
 		fmt.Println("Expression")
 		diag := result.Diags
 		if tree.Root != nil && show {

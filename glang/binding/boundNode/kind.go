@@ -6,4 +6,6 @@ const (
 	Literal BoundNodeKind = iota
 	Unary
 	Binary
+	Variable
+	Assign
 )

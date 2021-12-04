@@ -3,6 +3,7 @@ package compile
 import (
 	"almeng.com/glang/ast/tree"
 	"almeng.com/glang/binding"
+	"almeng.com/glang/binding/boundNode"
 	"almeng.com/glang/evaluator"
 	"almeng.com/glang/general"
 )
@@ -15,14 +16,14 @@ func NewCompiler(syntax tree.Tree) Compiler {
 	return Compiler{syntax}
 }
 
-func (c *Compiler) Evaluate() evaluator.EvaluationResult {
-	binder := binding.NewBinder()
+func (c *Compiler) Evaluate(vars *map[string]boundNode.BoundExpression) evaluator.EvaluationResult {
+	binder := binding.NewBinder(vars)
 	boundExp := binder.Bind(c.Syntax.Root)
 	diag := general.ConcatDiag(c.Syntax.Diagnostics, binder.Diag)
 	if len(diag.Notions) > 0 {
 		return evaluator.Result(diag, binding.InvalidLiteraExpression)
 	}
-	eval := evaluator.NewEvaluator(boundExp)
+	eval := evaluator.NewEvaluator(boundExp, vars)
 	res := eval.Evaluate().(*binding.BoundLiteralExpression)
 	return evaluator.Result(diag, *res)
 }
