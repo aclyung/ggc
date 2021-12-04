@@ -1,9 +1,9 @@
 package tree
 
 import (
-	"almeng.com/glang/glang/expression"
-	"almeng.com/glang/glang/general"
-	"almeng.com/glang/glang/syntax"
+	"almeng.com/glang/expression"
+	"almeng.com/glang/general"
+	"almeng.com/glang/syntax"
 )
 
 type Tree struct {

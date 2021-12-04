@@ -1,14 +1,15 @@
 package parser
 
 import (
-	"almeng.com/glang/glang/ast/tree"
-	"almeng.com/glang/glang/expression"
-	"almeng.com/glang/glang/general"
-	"almeng.com/glang/glang/lexer"
-	"almeng.com/glang/glang/token"
 	"bufio"
 	"fmt"
 	"os"
+
+	"almeng.com/glang/ast/tree"
+	"almeng.com/glang/expression"
+	"almeng.com/glang/general"
+	"almeng.com/glang/lexer"
+	"almeng.com/glang/token"
 )
 
 type parser struct {
@@ -63,7 +64,7 @@ func (p *parser) MatchToken(tok token.Token) expression.SyntaxToken {
 	}
 	wanted := fmt.Sprint(tok)
 	got := fmt.Sprint(cur.Kind())
-	p.Diag.Diagnose("WARNING: Expected <"+wanted+">, got <"+got+">", general.WARN)
+	p.Diag.UnexpectedToken(p.current().Span, wanted, got)
 	return *(lexer.Token(p.current().Kind(), p.position, "", nil))
 }
 

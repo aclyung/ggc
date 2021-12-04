@@ -1,8 +1,9 @@
 package binding
 
 import (
-	"almeng.com/glang/glang/token"
 	"reflect"
+
+	"almeng.com/glang/token"
 )
 
 type BoundUnaryOperKind = int
@@ -17,6 +18,7 @@ type BoundUnaryOperator struct {
 	Token       token.Token
 	OperKind    BoundUnaryOperKind
 	OperandKind reflect.Kind
+	ResultType  reflect.Kind
 }
 
 var IllegalUnaryOperator = NewBoundUnaryOperator(token.ILLEGAL, ILLEGAL, reflect.Invalid)
@@ -30,7 +32,7 @@ var unaryOpers = []BoundUnaryOperator{
 }
 
 func NewBoundUnaryOperator(tok token.Token, kind BoundUnaryOperKind, operandType reflect.Kind) BoundUnaryOperator {
-	return BoundUnaryOperator{tok, kind, operandType}
+	return BoundUnaryOperator{tok, kind, operandType, operandType}
 }
 
 func BindUnaryOperator(tok token.Token, operandType reflect.Kind) BoundUnaryOperator {

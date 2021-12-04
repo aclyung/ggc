@@ -1,8 +1,9 @@
 package binding
 
 import (
-	"almeng.com/glang/glang/binding/boundNode"
 	"reflect"
+
+	"almeng.com/glang/binding/boundNode"
 )
 
 type BoundBinaryExpression struct {
@@ -19,6 +20,6 @@ func (unary *BoundBinaryExpression) Kind() boundNode.BoundNodeKind {
 	return boundNode.Binary
 }
 
-func (unary *BoundBinaryExpression) Type() reflect.Type {
-	return unary.Left.Type()
+func (unary *BoundBinaryExpression) Type() reflect.Kind {
+	return unary.Oper.ResultType
 }

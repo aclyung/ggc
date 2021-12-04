@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"almeng.com/glang/glang/ast/tree"
-	"almeng.com/glang/glang/parser"
+	"almeng.com/glang/ast/tree"
+	"almeng.com/glang/parser"
 )
 
 func ParseTree(text string) tree.Tree {

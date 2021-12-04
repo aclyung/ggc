@@ -1,12 +1,11 @@
 package main
 
 import (
-	"almeng.com/glang/glang/ast"
-	"almeng.com/glang/glang/binding"
-	"almeng.com/glang/glang/evaluator"
-	"almeng.com/glang/glang/expression"
-	"almeng.com/glang/glang/general"
-	"almeng.com/glang/glang/syntax"
+	"almeng.com/glang/ast"
+	"almeng.com/glang/compile"
+	"almeng.com/glang/expression"
+	"almeng.com/glang/general"
+	"almeng.com/glang/syntax"
 	"bufio"
 	"fmt"
 	"os"
@@ -83,24 +82,17 @@ func main() {
 		}
 		start := time.Now()
 		tree := ast.ParseTree(line)
+		compiler := compile.NewCompiler(tree)
+		result := compiler.Evaluate()
 		fmt.Println("Expression")
-		binder := binding.NewBinder()
-		boundExp := binder.Bind(tree.Root)
-		notions := make([]general.Diag, 0)
-		notions = append(notions, tree.Diagnostics.Notions...)
-		notions = append(notions, binder.Diag.Notions...)
-		diag := general.NewDiag()
-		diag.Notions = notions
+		diag := result.Diags
 		if tree.Root != nil && show {
 			pprint(tree.Root, "", true)
 		}
 		if len(diag.Notions) > 0 {
-			general.Alert(diag)
+			general.Alert(diag, line)
 		} else {
-			eval := evaluator.NewEvaluator(boundExp)
-			res := eval.Evaluate().(*binding.BoundLiteralExpression)
-			fmt.Println("result: " + fmt.Sprint(res.Type()) + " | " + fmt.Sprint(res.Value))
-
+			fmt.Println("result: " + fmt.Sprint(result.Type()) + " | " + fmt.Sprint(result.Value))
 		}
 		fmt.Println(time.Since(start))
 	}

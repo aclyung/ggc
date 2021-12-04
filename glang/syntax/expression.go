@@ -1,6 +1,6 @@
 package syntax
 
-import "almeng.com/glang/glang/token"
+import "almeng.com/glang/token"
 
 type ExpressionSyntax interface {
 	Kind() token.Token

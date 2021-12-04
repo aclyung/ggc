@@ -1,11 +1,12 @@
 package binding
 
 import (
-	"almeng.com/glang/glang/binding/boundNode"
-	"almeng.com/glang/glang/expression"
-	"almeng.com/glang/glang/general"
-	"almeng.com/glang/glang/syntax"
 	"reflect"
+
+	"almeng.com/glang/binding/boundNode"
+	"almeng.com/glang/expression"
+	"almeng.com/glang/general"
+	"almeng.com/glang/syntax"
 )
 
 type Binder struct {
@@ -24,8 +25,15 @@ func (b *Binder) Bind(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
 		return b.BindBinaryExpression(exp.(*expression.BinaryExpressionSyntax))
 	case syntax.ExpUnary:
 		return b.BindUnaryExpression(exp.(*expression.UnaryExpressionSyntax))
+	case syntax.ExpParen:
+		return b.BindParenthesisExpression(exp.(*expression.ParenExpressionSyntax))
+
 	}
 	return nil
+}
+
+func (b *Binder) BindParenthesisExpression(exp *expression.ParenExpressionSyntax) boundNode.BoundExpression {
+	return b.Bind(exp.Expression)
 }
 
 func isNumber(p reflect.Type) bool {

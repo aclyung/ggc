@@ -1,20 +1,23 @@
 package binding
 
 import (
-	"almeng.com/glang/glang/binding/boundNode"
 	"reflect"
+
+	"almeng.com/glang/binding/boundNode"
 )
 
 type BoundLiteralExpression struct {
 	Value interface{}
 }
 
+var InvalidLiteraExpression = BoundLiteralExpression{Value: nil}
+
 func (b *BoundLiteralExpression) Kind() boundNode.BoundNodeKind {
 	return boundNode.Literal
 }
 
-func (b *BoundLiteralExpression) Type() reflect.Type {
-	return reflect.TypeOf(b.Value)
+func (b *BoundLiteralExpression) Type() reflect.Kind {
+	return reflect.TypeOf(b.Value).Kind()
 }
 
 func NewBoundLiteralExpression(value interface{}) *BoundLiteralExpression {

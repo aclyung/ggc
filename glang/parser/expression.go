@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"almeng.com/glang/glang/expression"
-	"almeng.com/glang/glang/syntax"
-	"almeng.com/glang/glang/token"
+	"almeng.com/glang/expression"
+	"almeng.com/glang/syntax"
+	"almeng.com/glang/token"
 )
 
 func (p *parser) parseExpression(parentPrecedence int) syntax.ExpressionSyntax {

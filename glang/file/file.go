@@ -1,7 +1,7 @@
 package file
 
 import (
-	"almeng.com/glang/glang/general"
+	"almeng.com/glang/general"
 	"bufio"
 	"encoding/json"
 	"fmt"

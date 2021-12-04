@@ -1,8 +1,8 @@
 package expression
 
 import (
-	"almeng.com/glang/glang/syntax"
-	"almeng.com/glang/glang/token"
+	"almeng.com/glang/syntax"
+	"almeng.com/glang/token"
 )
 
 type Literal struct {

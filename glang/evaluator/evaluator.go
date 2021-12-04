@@ -1,12 +1,12 @@
 package evaluator
 
 import (
-	"almeng.com/glang/glang/binding"
-	"almeng.com/glang/glang/binding/boundNode"
-	_ "almeng.com/glang/glang/expression"
-	_ "almeng.com/glang/glang/lexer"
-	_ "almeng.com/glang/glang/syntax"
-	_ "almeng.com/glang/glang/token"
+	"almeng.com/glang/binding"
+	"almeng.com/glang/binding/boundNode"
+	_ "almeng.com/glang/expression"
+	_ "almeng.com/glang/lexer"
+	_ "almeng.com/glang/syntax"
+	_ "almeng.com/glang/token"
 	_ "fmt"
 	"reflect"
 )
@@ -27,7 +27,7 @@ func castNumber(l boundNode.BoundExpression, r boundNode.BoundExpression) (lfloa
 	lfloat, rfloat, lint, rint = 0, 0, 0, 0
 	left, right := l.(*binding.BoundLiteralExpression), r.(*binding.BoundLiteralExpression)
 	var lval, rval interface{} = left.Value, right.Value
-	isInt = (left.Type() == right.Type()) && left.Type().Kind() == reflect.Int64
+	isInt = (left.Type() == right.Type()) && left.Type() == reflect.Int64
 	if isInt {
 		lint, rint = lval.(int64), rval.(int64)
 		return
@@ -89,13 +89,17 @@ func ExpressionEvaluation(root boundNode.BoundExpression) boundNode.BoundExpress
 		right = ExpressionEvaluation(right)
 
 		if binding.IsLogical(oper) {
-			Lleft, Lright := left.(*binding.BoundLiteralExpression).Value.(bool), right.(*binding.BoundLiteralExpression).Value.(bool)
+			l, r := left.(*binding.BoundLiteralExpression).Value, right.(*binding.BoundLiteralExpression).Value
 			var res bool
 			switch oper {
 			case binding.LAND:
-				res = Lleft && Lright
+				res = l.(bool) && r.(bool)
 			case binding.LOR:
-				res = Lleft || Lright
+				res = l.(bool) || r.(bool)
+			case binding.EQL:
+				res = l == r
+			case binding.NEQ:
+				res = l != r
 			}
 			return returnToken(res)
 		}

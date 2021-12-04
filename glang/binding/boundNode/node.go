@@ -4,7 +4,7 @@ import "reflect"
 
 type BoundNode interface {
 	Kind() BoundNodeKind
-	Type() reflect.Type
+	Type() reflect.Kind
 }
 
 type BoundExpression = BoundNode

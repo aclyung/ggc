@@ -1,11 +1,13 @@
 package lexer
 
 import (
-	"almeng.com/glang/glang/expression"
-	"almeng.com/glang/glang/general"
-	"almeng.com/glang/glang/token"
+	"almeng.com/glang/general/TextSpan"
 	"strconv"
 	"unicode"
+
+	"almeng.com/glang/expression"
+	"almeng.com/glang/general"
+	"almeng.com/glang/token"
 )
 
 type Lexer struct {
@@ -95,14 +97,14 @@ func (lex *Lexer) Lex() *expression.SyntaxToken {
 		if tok == token.INT {
 			value, err := strconv.ParseInt(text, 10, 64)
 			if err != nil {
-				lex.Diag.Diagnose("ERROR: the Number is not Valid int64.", general.ERROR)
+				lex.Diag.InvalidNumber(TextSpan.Span(beg, lex.position), text, "int64")
 				//lex.Diagnose("ERROR: the Number is not Valid int64.", general.ERROR)
 			}
 			return Token(tok, beg, text, value)
 		}
 		value, err := strconv.ParseFloat(text, 8)
 		if err != nil {
-			lex.Diag.Diagnose("ERROR: the Number is not Valid float64.", general.ERROR)
+			lex.Diag.InvalidNumber(TextSpan.Span(beg, lex.position), text, "float64")
 			//lex.Diagnose("ERROR: the Number is not Valid float64.", general.ERROR)
 		}
 		return Token(tok, beg, text, value)
@@ -142,8 +144,8 @@ func (lex *Lexer) Lex() *expression.SyntaxToken {
 		}
 		return Token(tok, pos, cur, nil)
 	}
-	lex.Diag.Diagnose("ERROR: Illegal Charater '"+string(cur)+"'", general.ERROR)
-	//lex.Diagnose("ERROR: Illegal Charater '"+string(cur)+"'", general.ERROR)
+
+	lex.Diag.BadCharacter(TextSpan.Span(pos, lex.position), cur)
 	return Token(token.ILLEGAL, pos, lex.text[pos:pos+1], nil)
 
 }

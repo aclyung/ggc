@@ -5,31 +5,23 @@ import (
 	"log"
 )
 
-type Level = int
-
-type Diags struct {
-	Notions []Diag
-}
-
-func NewDiag() Diags {
-	return Diags{}
-}
-
-func (d *Diags) Diagnose(text string, l Level) {
-	diag := Diag{text, l}
-	d.Notions = append(d.Notions, diag)
-}
-
-type Diag struct {
-	Msg string
-	Lev Level
-}
+type Level int
 
 const (
 	WARN = iota
 	CAUTION
 	ERROR
 )
+
+var Levels = [...]string{
+	WARN:    "WARN",
+	CAUTION: "CAUTION",
+	ERROR:   "ERROR",
+}
+
+func (l Level) String() string {
+	return Levels[l]
+}
 
 var color = [...]string{
 	WARN:    "\033[30m",
@@ -43,15 +35,19 @@ func ErrCheck(err error) {
 	}
 }
 
-func Alert(diagnotics Diags) {
+func Alert(diagnotics Diags, line string) {
 	for _, v := range diagnotics.Notions {
+		beg, end := v.Span.Beg, v.Span.End
 		print_msg(v.Msg, v.Lev)
+		pre, err, suf := line[:beg], line[beg:end], line[end:]
+		fmt.Println("\t" + pre + color[v.Lev] + err + "\033[0m" + suf)
 	}
 }
 
 func print_msg(msg string, l Level) {
 	fmt.Printf(color[l])
-	fmt.Println(msg + "\033[0m")
+	fmt.Println(fmt.Sprint(l) + ": " + msg + "\033[0m")
+
 }
 
 func Err(msg string) string {

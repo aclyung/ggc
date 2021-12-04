@@ -1,9 +1,9 @@
 package binding
 
 import (
-	"almeng.com/glang/glang/binding/boundNode"
-	"almeng.com/glang/glang/expression"
-	"almeng.com/glang/glang/syntax"
+	"almeng.com/glang/binding/boundNode"
+	"almeng.com/glang/expression"
+	"almeng.com/glang/syntax"
 )
 
 func (b *Binder) BindLiteralExpression(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
