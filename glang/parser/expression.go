@@ -40,12 +40,16 @@ func (p *parser) parseExpression(parentPrecedence int) syntax.ExpressionSyntax {
 func (p *parser) ParsePrevExpression() syntax.ExpressionSyntax {
 	tok := p.current().Kind()
 	var numTok expression.SyntaxToken
+
 	switch tok {
 	case token.LPAREN:
 		left := p.NextToken()
 		express := p.parseExpression(0)
 		right := p.MatchToken(token.RPAREN)
 		return expression.NewParenExpressionSyntax(left, express, right)
+	case token.BOOL:
+		val := p.MatchToken(token.BOOL)
+		return expression.NewliteralExpressionSyntax(val)
 	case token.INT:
 		numTok = p.MatchToken(token.INT)
 	case token.FLOAT:

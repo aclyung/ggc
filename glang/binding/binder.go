@@ -31,12 +31,8 @@ func (b *Binder) Bind(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
 
 func (b *Binder) BindLiteralExpression(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
 	lit := exp.(*expression.Literal)
-	val := lit.Value()
-	switch lit.Kind() {
-	case token.INT:
-		return NewBoundLiteralExpression(val)
-	case token.FLOAT:
-		return NewBoundLiteralExpression(val)
+	if lit.IsKindValid() {
+		return NewBoundLiteralExpression(lit.Value())
 	}
 	return NewBoundLiteralExpression(int64(0))
 }

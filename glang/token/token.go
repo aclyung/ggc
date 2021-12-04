@@ -25,6 +25,7 @@ const (
 	//IMAG   // 123.45i
 	CHAR   // 'a'
 	STRING // "abc"
+	BOOL   // true
 	literal_end
 
 	Operator_beg
@@ -140,6 +141,7 @@ var tokens = [...]string{
 	//IMAG:   "IMAG",
 	CHAR:   "CHAR",
 	STRING: "STRING",
+	BOOL:   "BOOL",
 
 	ADD: "+",
 	SUB: "-",

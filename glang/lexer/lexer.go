@@ -113,7 +113,19 @@ func (lex *Lexer) Lex() *expression.SyntaxToken {
 		}
 		return nil
 	}
+	if unicode.IsLetter(lex.current()) {
+		beg := lex.position
+		for unicode.IsLetter(lex.current()) {
+			lex.next()
+		}
+		text := lex.text[beg:lex.position]
+		isBool := text == "true" || text == "false"
+		if isBool {
+			return Token(token.BOOL, beg, text, text == "true")
+		}
+		return Token(token.IDENT, beg, text, nil)
 
+	}
 	cur := string(lex.current())
 	pos := lex.position
 

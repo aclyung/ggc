@@ -86,13 +86,15 @@ func main() {
 		fmt.Println("Expression")
 		binder := binding.NewBinder()
 		boundExp := binder.Bind(tree.Root)
-		notions := append(tree.Diagnostics.Notions, binder.Diag.Notions...)
+		notions := make([]general.Diag, 0)
+		notions = append(notions, tree.Diagnostics.Notions...)
+		notions = append(notions, binder.Diag.Notions...)
 		diag := general.NewDiag()
 		diag.Notions = notions
 		if tree.Root != nil && show {
 			pprint(tree.Root, "", true)
 		}
-		if len(tree.Diagnostics.Notions) > 0 {
+		if len(diag.Notions) > 0 {
 			general.Alert(diag)
 		} else {
 			eval := evaluator.NewEvaluator(boundExp)
