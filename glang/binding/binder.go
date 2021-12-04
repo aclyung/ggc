@@ -19,7 +19,7 @@ func NewBinder() *Binder {
 
 func (b *Binder) Bind(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
 	switch exp.Type() {
-	case syntax.ExpNum:
+	case syntax.ExpLiteral:
 		return b.BindLiteralExpression(exp.(*expression.Literal))
 	case syntax.ExpBinary:
 		return b.BindBinaryExpression(exp.(*expression.BinaryExpressionSyntax))
@@ -59,42 +59,57 @@ func (b *Binder) BindBinaryExpression(exp syntax.ExpressionSyntax) boundNode.Bou
 }
 
 func BindBinaryExpressionKind(kind token.Token, Tleft reflect.Type, Tright reflect.Type) BoundBinaryOperKind {
-	if Tleft.Kind() == Tright.Kind() {
-		if !isTypeValid(Tleft) {
-			return ILLEGAL
+	if isNumber(Tleft) && isNumber(Tright) {
+		switch kind {
+		case token.ADD:
+			return ADD
+		case token.SUB:
+			return SUB
+		case token.MUL:
+			return MUL
+		case token.QUO:
+			return QUO
 		}
 	}
-	if !(isTypeValid(Tleft) && isTypeValid(Tright)) {
-		return ILLEGAL
+
+	if isBool(Tleft) && isBool(Tright) {
+		switch kind {
+		case token.LAND:
+			return LAND
+		case token.LOR:
+			return LOR
+		}
 	}
 
-	switch kind {
-	case token.ADD:
-		return ADD
-	case token.SUB:
-		return SUB
-	case token.MUL:
-		return MUL
-	case token.QUO:
-		return QUO
-	}
 	return ILLEGAL
 }
 
-func isTypeValid(p reflect.Type) bool {
-	return p.Kind() == reflect.Int64 || p.Kind() == reflect.Float64
+func isNumber(p reflect.Type) bool {
+	switch p.Kind() {
+	case reflect.Int64, reflect.Float64:
+		return true
+	}
+	return false
+}
+
+func isBool(p reflect.Type) bool {
+	return p.Kind() == reflect.Bool
 }
 
 func BindUnaryExpressionKind(kind token.Token, operandType reflect.Type) BoundUnaryOperKind {
-	if !isTypeValid(operandType) {
-		return ILLEGAL
+	if isNumber(operandType) {
+		switch kind {
+		case token.ADD:
+			return Identity
+		case token.SUB:
+			return Negation
+		}
 	}
-
-	switch kind {
-	case token.ADD:
-		return Identity
-	case token.SUB:
-		return Negation
+	if isBool(operandType) {
+		switch kind {
+		case token.NOT:
+			return NOT
+		}
 	}
 	return ILLEGAL
 }

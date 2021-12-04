@@ -25,7 +25,7 @@ func (LiteralSyntax *Literal) Kind() token.Token {
 }
 
 func (LiteralSyntax *Literal) Type() syntax.Type {
-	return syntax.ExpNum
+	return syntax.ExpLiteral
 }
 
 func (LiteralSyntax *Literal) Value() interface{} {

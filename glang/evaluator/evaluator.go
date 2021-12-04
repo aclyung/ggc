@@ -77,6 +77,9 @@ func ExpressionEvaluation(root boundNode.BoundExpression) boundNode.BoundExpress
 			resR := rfloat + float64(rint)
 			val := resL * resR
 			return returnToken(val)
+		case binding.NOT:
+			return returnToken(!operand.(*binding.BoundLiteralExpression).Value.(bool))
+
 		}
 	case boundNode.Binary:
 		nod := root.(*binding.BoundBinaryExpression)
@@ -85,12 +88,24 @@ func ExpressionEvaluation(root boundNode.BoundExpression) boundNode.BoundExpress
 		left = ExpressionEvaluation(left)
 		right = ExpressionEvaluation(right)
 
+		if binding.IsLogical(oper) {
+			Lleft, Lright := left.(*binding.BoundLiteralExpression).Value.(bool), right.(*binding.BoundLiteralExpression).Value.(bool)
+			var res bool
+			switch oper {
+			case binding.LAND:
+				res = Lleft && Lright
+			case binding.LOR:
+				res = Lleft || Lright
+			}
+			return returnToken(res)
+		}
+
 		lfloat, lint, rfloat, rint, isInt := castNumber(left, right)
+		resL := lfloat + float64(lint)
+		resR := rfloat + float64(rint)
 
 		switch oper {
 		case binding.ADD:
-			resL := lfloat + float64(lint)
-			resR := rfloat + float64(rint)
 			if isInt {
 				val := lint + rint
 				return returnToken(val)
@@ -98,8 +113,6 @@ func ExpressionEvaluation(root boundNode.BoundExpression) boundNode.BoundExpress
 			val := resL + resR
 			return returnToken(val)
 		case binding.SUB:
-			resL := lfloat + float64(lint)
-			resR := rfloat + float64(rint)
 			if isInt {
 				val := lint - rint
 				return returnToken(val)
@@ -107,8 +120,6 @@ func ExpressionEvaluation(root boundNode.BoundExpression) boundNode.BoundExpress
 			val := resL - resR
 			return returnToken(val)
 		case binding.MUL:
-			resL := lfloat + float64(lint)
-			resR := rfloat + float64(rint)
 			if isInt {
 				val := lint * rint
 				return returnToken(val)
@@ -116,14 +127,13 @@ func ExpressionEvaluation(root boundNode.BoundExpression) boundNode.BoundExpress
 			val := resL * resR
 			return returnToken(val)
 		case binding.QUO:
-			resL := lfloat + float64(lint)
-			resR := rfloat + float64(rint)
 			if isInt {
 				val := lint / rint
 				return returnToken(val)
 			}
 			val := resL / resR
 			return returnToken(val)
+
 		default:
 			return nil
 		}

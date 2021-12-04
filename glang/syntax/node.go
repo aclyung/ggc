@@ -4,7 +4,7 @@ type Type int
 
 const (
 	type_beg Type = iota
-	ExpNum
+	ExpLiteral
 	ExpBinary
 	ExpUnary
 	ExpParen
@@ -13,11 +13,11 @@ const (
 )
 
 var NodeType = [...]string{
-	ExpNum:    "NumberExpressionNode",
-	ExpBinary: "BinaryExpressionNode",
-	ExpUnary:  "UnaryExpressionNode",
-	ExpParen:  "ParenthesisExpressionNode",
-	Token:     "SyntaxTokenNode",
+	ExpLiteral: "NumberExpressionNode",
+	ExpBinary:  "BinaryExpressionNode",
+	ExpUnary:   "UnaryExpressionNode",
+	ExpParen:   "ParenthesisExpressionNode",
+	Token:      "SyntaxTokenNode",
 }
 
 func (t Type) String() string {

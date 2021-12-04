@@ -10,9 +10,7 @@ func (p *parser) parseExpression(parentPrecedence int) syntax.ExpressionSyntax {
 	var left syntax.ExpressionSyntax
 	uPrec := p.current().Kind().Precedence()
 	switch p.current().Kind() {
-	case token.ADD:
-		fallthrough
-	case token.SUB:
+	case token.NOT, token.ADD, token.SUB:
 		uPrec = token.UnaryPrec
 	default:
 		break

@@ -36,8 +36,8 @@ const (
 	QUO // /
 	REM // %
 
-	// AND     // &
-	// OR      // |
+	AND // &
+	OR  // |
 	// XOR     // ^
 	// SHL     // <<
 	// SHR     // >>
@@ -149,8 +149,8 @@ var tokens = [...]string{
 	QUO: "/",
 	REM: "%",
 
-	// AND:     "&",
-	// OR:      "|",
+	AND: "&",
+	OR:  "|",
 	// XOR:     "^",
 	// SHL:     "<<",
 	// SHR:     ">>",
