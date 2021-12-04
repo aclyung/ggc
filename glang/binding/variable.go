@@ -2,16 +2,16 @@ package binding
 
 import (
 	"almeng.com/glang/binding/boundNode"
+	"almeng.com/glang/general"
 	"reflect"
 )
 
 type BoundVariableExpression struct {
-	Name    string
-	VarKind reflect.Kind
+	Variable general.VariableSymbol
 }
 
-func NewBoundVariableExpression(name string, kind reflect.Kind) *BoundVariableExpression {
-	return &BoundVariableExpression{name, kind}
+func NewBoundVariableExpression(variable general.VariableSymbol) *BoundVariableExpression {
+	return &BoundVariableExpression{variable}
 }
 
 func (variable *BoundVariableExpression) Kind() boundNode.BoundNodeKind {
@@ -19,5 +19,5 @@ func (variable *BoundVariableExpression) Kind() boundNode.BoundNodeKind {
 }
 
 func (variable *BoundVariableExpression) Type() reflect.Kind {
-	return variable.VarKind
+	return variable.Variable.Type
 }

@@ -2,17 +2,18 @@ package binding
 
 import (
 	"almeng.com/glang/binding/boundNode"
+	"almeng.com/glang/general"
 	_ "almeng.com/glang/syntax"
 	"reflect"
 )
 
 type BoundAssignmentExpression struct {
-	Name       string
+	Variable   general.VariableSymbol
 	Expression boundNode.BoundExpression
 }
 
-func NewBoundAssignmentExpression(name string, exp boundNode.BoundExpression) *BoundAssignmentExpression {
-	return &BoundAssignmentExpression{name, exp}
+func NewBoundAssignmentExpression(variable general.VariableSymbol, exp boundNode.BoundExpression) *BoundAssignmentExpression {
+	return &BoundAssignmentExpression{variable, exp}
 }
 
 func (assign *BoundAssignmentExpression) Kind() boundNode.BoundNodeKind {

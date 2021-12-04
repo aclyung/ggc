@@ -14,11 +14,11 @@ import (
 
 type Evaluator struct {
 	root boundNode.BoundExpression
-	vars *map[string]boundNode.BoundExpression
+	vars *map[general.VariableSymbol]boundNode.BoundExpression
 	diag general.Diags
 }
 
-func NewEvaluator(root boundNode.BoundExpression, vars *map[string]boundNode.BoundExpression) *Evaluator {
+func NewEvaluator(root boundNode.BoundExpression, vars *map[general.VariableSymbol]boundNode.BoundExpression) *Evaluator {
 	return &Evaluator{root, vars, general.NewDiag()}
 }
 
@@ -66,13 +66,13 @@ func (e *Evaluator) ExpressionEvaluation(root boundNode.BoundExpression) boundNo
 		return val
 	case boundNode.Variable:
 		BoundVar := root.(*binding.BoundVariableExpression)
-		name := BoundVar.Name
+		name := BoundVar.Variable
 		val := vars[name]
 		return val
 	case boundNode.Assign:
 		assign := root.(*binding.BoundAssignmentExpression)
 		val := e.ExpressionEvaluation(assign.Expression)
-		vars[assign.Name] = val
+		vars[assign.Variable] = val
 		return &binding.InvalidLiteraExpression
 
 	case boundNode.Unary:

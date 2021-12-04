@@ -16,7 +16,7 @@ func NewCompiler(syntax tree.Tree) Compiler {
 	return Compiler{syntax}
 }
 
-func (c *Compiler) Evaluate(vars *map[string]boundNode.BoundExpression) evaluator.EvaluationResult {
+func (c *Compiler) Evaluate(vars *map[general.VariableSymbol]boundNode.BoundExpression) evaluator.EvaluationResult {
 	binder := binding.NewBinder(vars)
 	boundExp := binder.Bind(c.Syntax.Root)
 	diag := general.ConcatDiag(c.Syntax.Diagnostics, binder.Diag)

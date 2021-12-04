@@ -7,9 +7,9 @@ import (
 	"almeng.com/glang/expression"
 	"almeng.com/glang/general"
 	"almeng.com/glang/syntax"
-	"bufio"
+	"github.com/c-bata/go-prompt"
+
 	"fmt"
-	"os"
 	"time"
 )
 
@@ -47,7 +47,17 @@ func pprint(nod syntax.ExpressionSyntax, indent string, isLast bool) {
 	}
 }
 
+func completer(d prompt.Document) []prompt.Suggest {
+	return prompt.FilterHasPrefix(nil, d.GetWordBeforeCursor(), true)
+}
+
 func main() {
+
+	// Default prefix is "# ", but you can change it like so:
+	// cli.SetPrefix("my-cli# ")
+
+	// Executes a command directly, if one is given in arguments.
+	// Otherwise creates a CLI.
 	//1. load file 2.
 	// conf := file.GetConfig(config)
 	// conf.PrintInfo()
@@ -66,11 +76,13 @@ func main() {
 	show := true
 	tsPromt := map[bool]string{true: "Showing parse trees", false: "Not showing parse trees"}
 
-	vars := &map[string]boundNode.BoundExpression{}
+	vars := &map[general.VariableSymbol]boundNode.BoundExpression{}
 	for {
-		fmt.Print(">")
-		input := bufio.NewReader((os.Stdin))
-		line, _ := input.ReadString('\n')
+
+		line := prompt.Input(">", completer)
+		//fmt.Print(">")
+		//input := bufio.NewReader((os.Stdin))
+		//line, _ := input.ReadString('\n')
 		//		general.ErrCheck(err)
 		//line = strings.Replace(line,string(rune(0)),"",-1)
 		if line == "/show\n" {
