@@ -7,12 +7,12 @@ import (
 
 type BoundBinaryExpression struct {
 	Left  boundNode.BoundExpression
-	Oper  BoundUnaryOperKind
+	Oper  BoundBinaryOperator
 	Right boundNode.BoundExpression
 }
 
-func NewBoundBinaryExpression(left boundNode.BoundExpression, operKind BoundBinaryOperKind, right boundNode.BoundExpression) *BoundBinaryExpression {
-	return &BoundBinaryExpression{left, operKind, right}
+func NewBoundBinaryExpression(left boundNode.BoundExpression, op BoundBinaryOperator, right boundNode.BoundExpression) *BoundBinaryExpression {
+	return &BoundBinaryExpression{left, op, right}
 }
 
 func (unary *BoundBinaryExpression) Kind() boundNode.BoundNodeKind {

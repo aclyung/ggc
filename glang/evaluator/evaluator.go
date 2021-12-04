@@ -63,7 +63,7 @@ func ExpressionEvaluation(root boundNode.BoundExpression) boundNode.BoundExpress
 	case boundNode.Unary:
 		u := root.(*binding.BoundUnaryExpression)
 		operand := ExpressionEvaluation(u.Operand)
-		switch u.Oper {
+		switch u.Oper.OperKind {
 		case binding.Identity:
 			return operand
 		case binding.Negation:
@@ -83,7 +83,7 @@ func ExpressionEvaluation(root boundNode.BoundExpression) boundNode.BoundExpress
 		}
 	case boundNode.Binary:
 		nod := root.(*binding.BoundBinaryExpression)
-		var oper binding.BoundBinaryOperKind = nod.Oper
+		var oper binding.BoundBinaryOperKind = nod.Oper.Oper
 		left, right := nod.Left, nod.Right
 		left = ExpressionEvaluation(left)
 		right = ExpressionEvaluation(right)

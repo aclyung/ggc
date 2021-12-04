@@ -6,12 +6,12 @@ import (
 )
 
 type BoundUnaryExpression struct {
-	Oper    BoundUnaryOperKind
+	Oper    BoundUnaryOperator
 	Operand boundNode.BoundExpression
 }
 
-func NewBoundUnaryExpression(operKind BoundUnaryOperKind, operand boundNode.BoundExpression) *BoundUnaryExpression {
-	return &BoundUnaryExpression{operKind, operand}
+func NewBoundUnaryExpression(op BoundUnaryOperator, operand boundNode.BoundExpression) *BoundUnaryExpression {
+	return &BoundUnaryExpression{op, operand}
 }
 
 func (unary *BoundUnaryExpression) Kind() boundNode.BoundNodeKind {
