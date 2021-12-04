@@ -1,0 +1,66 @@
+Date : 2021-12-04 17:37:38
+Directory : /Users/seungyeoplee/Workspace/glang/glang
+Total : 29 files,  1142 codes, 151 comments, 257 blanks, all 1550 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Go       |         29 |      1,142 |        151 |        257 |      1,550 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                   |         29 |      1,142 |        151 |        257 |      1,550 |
+| ast                                                                 |          2 |         23 |          0 |          7 |         30 |
+| ast/tree                                                            |          1 |         14 |          0 |          4 |         18 |
+| binding                                                             |         11 |        251 |          0 |         64 |        315 |
+| binding/boundNode                                                   |          2 |         14 |          0 |          7 |         21 |
+| builtin                                                             |          1 |          1 |          0 |          1 |          2 |
+| evaluator                                                           |          1 |        132 |          2 |         17 |        151 |
+| expression                                                          |          5 |        123 |          0 |         34 |        157 |
+| file                                                                |          1 |         82 |          2 |         16 |        100 |
+| general                                                             |          2 |         48 |          0 |         14 |         62 |
+| lexer                                                               |          1 |        134 |          8 |         17 |        159 |
+| parser                                                              |          2 |        127 |         20 |         22 |        169 |
+| syntax                                                              |          2 |         28 |          0 |          8 |         36 |
+| token                                                               |          1 |        193 |        119 |         57 |        369 |
++---------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                            | language | code       | comment    | blank      | total      |
++---------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| /Users/seungyeoplee/Workspace/glang/glang/ast/parse.go              | Go       |          9 |          0 |          3 |         12 |
+| /Users/seungyeoplee/Workspace/glang/glang/ast/tree/tree.go          | Go       |         14 |          0 |          4 |         18 |
+| /Users/seungyeoplee/Workspace/glang/glang/binding/binary.go         | Go       |         19 |          0 |          6 |         25 |
+| /Users/seungyeoplee/Workspace/glang/glang/binding/binary_bind.go    | Go       |         18 |          0 |          3 |         21 |
+| /Users/seungyeoplee/Workspace/glang/glang/binding/binary_oper.go    | Go       |         64 |          0 |         14 |         78 |
+| /Users/seungyeoplee/Workspace/glang/glang/binding/binder.go         | Go       |         35 |          0 |          7 |         42 |
+| /Users/seungyeoplee/Workspace/glang/glang/binding/boundNode/kind.go | Go       |          7 |          0 |          3 |         10 |
+| /Users/seungyeoplee/Workspace/glang/glang/binding/boundNode/node.go | Go       |          7 |          0 |          4 |         11 |
+| /Users/seungyeoplee/Workspace/glang/glang/binding/literal.go        | Go       |         17 |          0 |          6 |         23 |
+| /Users/seungyeoplee/Workspace/glang/glang/binding/literal_bind.go   | Go       |         13 |          0 |          3 |         16 |
+| /Users/seungyeoplee/Workspace/glang/glang/binding/unary.go          | Go       |         18 |          0 |          6 |         24 |
+| /Users/seungyeoplee/Workspace/glang/glang/binding/unary_bind.go     | Go       |         17 |          0 |          3 |         20 |
+| /Users/seungyeoplee/Workspace/glang/glang/binding/unary_oper.go     | Go       |         36 |          0 |          9 |         45 |
+| /Users/seungyeoplee/Workspace/glang/glang/builtin/builtin.go        | Go       |          1 |          0 |          1 |          2 |
+| /Users/seungyeoplee/Workspace/glang/glang/evaluator/evaluator.go    | Go       |        132 |          2 |         17 |        151 |
+| /Users/seungyeoplee/Workspace/glang/glang/expression/binary.go      | Go       |         26 |          0 |          5 |         31 |
+| /Users/seungyeoplee/Workspace/glang/glang/expression/literal.go     | Go       |         28 |          0 |         10 |         38 |
+| /Users/seungyeoplee/Workspace/glang/glang/expression/parenthesis.go | Go       |         22 |          0 |          7 |         29 |
+| /Users/seungyeoplee/Workspace/glang/glang/expression/syntax.go      | Go       |         23 |          0 |          7 |         30 |
+| /Users/seungyeoplee/Workspace/glang/glang/expression/unary.go       | Go       |         24 |          0 |          5 |         29 |
+| /Users/seungyeoplee/Workspace/glang/glang/file/file.go              | Go       |         82 |          2 |         16 |        100 |
+| /Users/seungyeoplee/Workspace/glang/glang/general/diagnostic.go     | Go       |          1 |          0 |          1 |          2 |
+| /Users/seungyeoplee/Workspace/glang/glang/general/general.go        | Go       |         47 |          0 |         13 |         60 |
+| /Users/seungyeoplee/Workspace/glang/glang/lexer/lexer.go            | Go       |        134 |          8 |         17 |        159 |
+| /Users/seungyeoplee/Workspace/glang/glang/parser/expression.go      | Go       |         54 |          0 |          6 |         60 |
+| /Users/seungyeoplee/Workspace/glang/glang/parser/parser.go          | Go       |         73 |         20 |         16 |        109 |
+| /Users/seungyeoplee/Workspace/glang/glang/syntax/expression.go      | Go       |          7 |          0 |          3 |         10 |
+| /Users/seungyeoplee/Workspace/glang/glang/syntax/node.go            | Go       |         21 |          0 |          5 |         26 |
+| /Users/seungyeoplee/Workspace/glang/glang/token/token.go            | Go       |        193 |        119 |         57 |        369 |
+| Total                                                               |          |      1,142 |        151 |        257 |      1,550 |
++---------------------------------------------------------------------+----------+------------+------------+------------+------------+
