@@ -3,6 +3,7 @@ build/
 .idea
 .VSCodeCounter
 .DS_Store
+main
 
 test*
 !glang/
