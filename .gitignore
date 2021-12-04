@@ -1,4 +1,10 @@
 makefile
 build/
 test*
+!glang/
+!glang/*
+!*.go
+!LICENSE
+!README.md
+!config.json
 #hi
