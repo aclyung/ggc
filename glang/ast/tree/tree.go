@@ -1,17 +1,17 @@
 package tree
 
 import (
+	"almeng.com/glang/glang/expression"
 	"almeng.com/glang/glang/general"
-	"almeng.com/glang/glang/lexer"
-	"almeng.com/glang/glang/parser/node"
+	"almeng.com/glang/glang/syntax"
 )
 
-type SyntaxTree struct {
-	Diagnostics []general.Diag
-	Root        node.ExpressionSyntax
-	EOF         lexer.SyntaxToken
+type Tree struct {
+	Diagnostics general.Diags
+	Root        syntax.ExpressionSyntax
+	EOF         expression.SyntaxToken
 }
 
-func NewSyntaxTree(diag []general.Diag, root node.ExpressionSyntax, eof lexer.SyntaxToken) SyntaxTree {
-	return SyntaxTree{diag, root, eof}
+func NewSyntaxTree(diag general.Diags, root syntax.ExpressionSyntax, eof expression.SyntaxToken) Tree {
+	return Tree{diag, root, eof}
 }

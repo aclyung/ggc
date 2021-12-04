@@ -5,7 +5,7 @@ import (
 	"almeng.com/glang/glang/parser"
 )
 
-func ParseTree(text string) tree.SyntaxTree {
+func ParseTree(text string) tree.Tree {
 	pars := parser.Parser(text)
 	return pars.Parse()
 }

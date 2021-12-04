@@ -7,6 +7,19 @@ import (
 
 type Level = int
 
+type Diags struct {
+	Notions []Diag
+}
+
+func NewDiag() Diags {
+	return Diags{}
+}
+
+func (d *Diags) Diagnose(text string, l Level) {
+	diag := Diag{text, l}
+	d.Notions = append(d.Notions, diag)
+}
+
 type Diag struct {
 	Msg string
 	Lev Level
@@ -30,8 +43,8 @@ func ErrCheck(err error) {
 	}
 }
 
-func Alert(diagnotics []Diag) {
-	for _, v := range diagnotics {
+func Alert(diagnotics Diags) {
+	for _, v := range diagnotics.Notions {
 		print_msg(v.Msg, v.Lev)
 	}
 }

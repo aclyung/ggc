@@ -12,10 +12,10 @@ type BinaryExpressionSyntax struct {
 }
 
 func (b BinaryExpressionSyntax) Kind() token.Token {
-	return b.OperatorToken.Token
+	return b.OperatorToken.Kind()
 }
 func (b BinaryExpressionSyntax) Type() syntax.Type {
-	return syntax.ExpBi
+	return syntax.ExpBinary
 }
 func (b BinaryExpressionSyntax) GetChildren() []syntax.ExpressionSyntax {
 	return []syntax.ExpressionSyntax{b.Left, b.OperatorToken, b.Right}

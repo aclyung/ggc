@@ -1,166 +1,146 @@
 package lexer
 
 import (
+	"almeng.com/glang/glang/expression"
 	"almeng.com/glang/glang/general"
-	"almeng.com/glang/glang/parser/node"
-	"almeng.com/glang/glang/syntax/expression"
 	"almeng.com/glang/glang/token"
 	"strconv"
 	"unicode"
 )
 
-type SyntaxToken struct {
-	Token    token.Token
-	Position int
-	Text     string
-	Value    interface{}
-}
 type Lexer struct {
-	text        string
-	position    int
-	Diagnostics []general.Diag
+	text     string
+	position int
+	Diag     general.Diags
+	//Diagnostics []general.Diag
 }
 
 const EOFCHAR = '\000'
 
-func (tok SyntaxToken) GetChildren() []node.ExpressionSyntax {
-	return []node.ExpressionSyntax{}
-}
-
-func (tok SyntaxToken) Type() expression.Type {
-	return expression.SyntaxToken
-}
-
-func (tok SyntaxToken) Kind() token.Token {
-	return tok.Token
-}
-
 func NewLexer(text string) Lexer {
-	return Lexer{text: text, position: 0, Diagnostics: make([]general.Diag, 0)}
+	return Lexer{text: text, position: 0, Diag: general.NewDiag()} // ,Diagnostics: make([]general.Diag, 0)}
 }
 
-func (lexer *Lexer) current() rune {
-	if lexer.position >= len(lexer.text) {
+func (lex *Lexer) current() rune {
+	if lex.position >= len(lex.text) {
 		return EOFCHAR
 	}
-	return rune(lexer.text[lexer.position])
+	return rune(lex.text[lex.position])
 }
 
-func (lexer *Lexer) next() {
-	lexer.position++
+func (lex *Lexer) next() {
+	lex.position++
 }
 
-func (lexer *Lexer) NextToken() *SyntaxToken {
-	if lexer.position >= len(lexer.text) {
-		return Token(token.EOF, lexer.position, string(EOFCHAR), nil)
+func (lex *Lexer) Lex() *expression.SyntaxToken {
+	if lex.position >= len(lex.text) {
+		return Token(token.EOF, lex.position, string(EOFCHAR), nil)
 	}
-	if lexer.current() == '"' {
-		beg := lexer.position
+	if lex.current() == '"' {
+		beg := lex.position
 		for {
-			lexer.next()
-			if lexer.current() == '"' {
-				lexer.next()
+			lex.next()
+			if lex.current() == '"' {
+				lex.next()
 				break
 			}
-			if lexer.current() == EOFCHAR {
-				lexer.next()
-				return Token(token.ILLEGAL, lexer.position-1, lexer.text[beg:lexer.position-1], general.Err("Unexpectedly face EOF"))
+			if lex.current() == EOFCHAR {
+				lex.next()
+				return Token(token.ILLEGAL, lex.position-1, lex.text[beg:lex.position-1], general.Err("Unexpectedly face EOF"))
 			}
 		}
-		text := lexer.text[beg:lexer.position]
+		text := lex.text[beg:lex.position]
 		value := text[1 : len(text)-1]
 		return Token(token.STRING, beg, text, value)
 	}
 
-	if lexer.current() == '\'' {
-		beg := lexer.position
+	if lex.current() == '\'' {
+		beg := lex.position
 		for {
-			lexer.next()
-			cur := lexer.current()
+			lex.next()
+			cur := lex.current()
 			if cur == '\'' {
-				lexer.next()
+				lex.next()
 				break
 			}
 			if cur == EOFCHAR {
-				lexer.next()
-				return Token(token.ILLEGAL, lexer.position-1, lexer.text[beg:lexer.position-1], general.Err("Unexpectedly face EOF"))
+				lex.next()
+				return Token(token.ILLEGAL, lex.position-1, lex.text[beg:lex.position-1], general.Err("Unexpectedly face EOF"))
 			}
 		}
 
-		text := lexer.text[beg:lexer.position]
+		text := lex.text[beg:lex.position]
 		if len(text) == 2 || len(text) > 3 {
 			return Token(token.ILLEGAL, beg, text, general.Err("Illegal rune literal"))
 		}
-		value := int(rune(lexer.text[beg+1]))
+		value := int(rune(lex.text[beg+1]))
 		return Token(token.INT, beg, text, value)
 
 	}
 
-	if unicode.IsDigit(lexer.current()) {
-		beg := lexer.position
+	if unicode.IsDigit(lex.current()) {
+		beg := lex.position
 		tok := token.INT
-		for unicode.IsDigit(lexer.current()) {
-			lexer.next()
+		for unicode.IsDigit(lex.current()) {
+			lex.next()
 		}
-		if lexer.current() == '.' {
-			lexer.next()
+		if lex.current() == '.' {
+			lex.next()
 			tok = token.FLOAT
-			for unicode.IsDigit(lexer.current()) {
-				lexer.next()
+			for unicode.IsDigit(lex.current()) {
+				lex.next()
 			}
 		}
-		text := lexer.text[beg:lexer.position]
+		text := lex.text[beg:lex.position]
 		if tok == token.INT {
 			value, err := strconv.ParseInt(text, 10, 64)
 			if err != nil {
-				lexer.Diagnose("ERROR: the Number is not Valid int64.", general.ERROR)
+				lex.Diag.Diagnose("ERROR: the Number is not Valid int64.", general.ERROR)
+				//lex.Diagnose("ERROR: the Number is not Valid int64.", general.ERROR)
 			}
 			return Token(tok, beg, text, value)
 		}
 		value, err := strconv.ParseFloat(text, 8)
 		if err != nil {
-			lexer.Diagnose("ERROR: the Number is not Valid float64.", general.ERROR)
+			lex.Diag.Diagnose("ERROR: the Number is not Valid float64.", general.ERROR)
+			//lex.Diagnose("ERROR: the Number is not Valid float64.", general.ERROR)
 		}
 		return Token(tok, beg, text, value)
 	}
-	if unicode.IsSpace(lexer.current()) {
-		for unicode.IsSpace(lexer.current()) {
-			lexer.next()
+	if unicode.IsSpace(lex.current()) {
+		for unicode.IsSpace(lex.current()) {
+			lex.next()
 		}
 		return nil
 	}
 
-	cur := string(lexer.current())
-	pos := lexer.position
+	cur := string(lex.current())
+	pos := lex.position
 
-	lexer.next()
+	lex.next()
 	tok := token.LookOperUp(cur)
 	if tok.IsOperator() {
-		ncur := string(lexer.current())
+		ncur := string(lex.current())
 		ntok := token.LookOperUp(ncur)
 		op := cur + ncur
 		optok := token.LookOperUp(op)
 		if ntok.IsOperator() && optok.IsOperator() {
-			lexer.next()
+			lex.next()
 			return Token(optok, pos, op, nil)
 		}
 		return Token(tok, pos, cur, nil)
 	}
-
-	lexer.Diagnose("ERROR: Illegal Charater '"+string(cur)+"'", general.ERROR)
-	return Token(token.ILLEGAL, pos, lexer.text[pos:pos+1], nil)
+	lex.Diag.Diagnose("ERROR: Illegal Charater '"+string(cur)+"'", general.ERROR)
+	//lex.Diagnose("ERROR: Illegal Charater '"+string(cur)+"'", general.ERROR)
+	return Token(token.ILLEGAL, pos, lex.text[pos:pos+1], nil)
 
 }
-func (lex *Lexer) Diagnose(text string, l general.Level) {
-	diag := general.Diag{text, l}
-	lex.Diagnostics = append(lex.Diagnostics, diag)
-}
-func Token(token token.Token, position int, text string, value interface{}) *SyntaxToken {
 
-	return &SyntaxToken{
-		Token:    token,
-		Position: position,
-		Text:     text,
-		Value:    value,
-	}
+//func (lex *Lexer) Diagnose(text string, l general.Level) {
+//	diag := general.Diag{text, l}
+//	lex.Diagnostics = append(lex.Diagnostics, diag)
+//}
+func Token(token token.Token, position int, text string, value interface{}) *expression.SyntaxToken {
+
+	return expression.NewSyntaxToken(token, position, text, value)
 }
