@@ -76,7 +76,7 @@ func (lex *Lexer) Lex() *expression.SyntaxToken {
 			return Token(token.ILLEGAL, beg, text, general.Err("Illegal rune literal"))
 		}
 		value := int(rune(lex.text[beg+1]))
-		return Token(token.INT, beg, text, value)
+		return Token(token.CHAR, beg, text, value)
 
 	}
 

@@ -7,7 +7,9 @@ import (
 	"almeng.com/glang/expression"
 	"almeng.com/glang/general"
 	"almeng.com/glang/syntax"
+	"encoding/csv"
 	"github.com/c-bata/go-prompt"
+	"strings"
 
 	"fmt"
 	"time"
@@ -72,6 +74,17 @@ func main() {
 	// 	// fileMan.ReadLine(v)
 	// 	fmt.Println(parser.Parser(*v))
 
+	for _, each := range []string{
+		"100 - 20 *a", "test1, test2, test3", "test1,test2,test3",
+	} {
+		r := csv.NewReader(strings.NewReader(each))
+		r.TrimLeadingSpace = true
+		s, e := r.Read()
+		if e != nil {
+			panic(e)
+		}
+		fmt.Printf("%q\n", s)
+	}
 	// }
 	show := true
 	tsPromt := map[bool]string{true: "Showing parse trees", false: "Not showing parse trees"}
@@ -85,7 +98,7 @@ func main() {
 		//line, _ := input.ReadString('\n')
 		//		general.ErrCheck(err)
 		//line = strings.Replace(line,string(rune(0)),"",-1)
-		if line == "/show\n" {
+		if line == "/show" {
 			show = !show
 			fmt.Println(tsPromt[show])
 			continue
