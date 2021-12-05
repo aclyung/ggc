@@ -65,7 +65,7 @@ func (p *parser) MatchToken(tok token.Token) expression.SyntaxToken {
 	wanted := fmt.Sprint(tok)
 	got := fmt.Sprint(cur.Kind())
 	p.Diag.UnexpectedToken(p.current().Span, wanted, got)
-	return *(lexer.Token(p.current().Kind(), p.position, "", nil))
+	return *(expression.NewSyntaxToken(p.current().Kind(), p.position, "", nil))
 }
 
 //

@@ -301,6 +301,10 @@ func init() {
 	}
 }
 
+func IsOper(text string) bool {
+	return LookOperUp(text).IsOperator()
+}
+
 func LookOperUp(oper string) Token {
 	if tok, is_oper := operators[oper]; is_oper {
 		return tok

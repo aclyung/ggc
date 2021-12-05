@@ -1,19 +1,22 @@
 package lexer
 
 import (
+	"almeng.com/glang/expression"
 	"almeng.com/glang/general/TextSpan"
 	"strconv"
 	"unicode"
 
-	"almeng.com/glang/expression"
 	"almeng.com/glang/general"
 	"almeng.com/glang/token"
 )
 
 type Lexer struct {
-	text     string
-	position int
-	Diag     general.Diags
+	text      string
+	position  int
+	Diag      general.Diags
+	start     int
+	tokenKind token.Token
+	value     interface{}
 	//Diagnostics []general.Diag
 }
 
@@ -35,126 +38,150 @@ func (lex *Lexer) next() {
 }
 
 func (lex *Lexer) Lex() *expression.SyntaxToken {
-	if lex.position >= len(lex.text) {
-		return Token(token.EOF, lex.position, string(EOFCHAR), nil)
-	}
-	if lex.current() == '"' {
-		beg := lex.position
-		for {
-			lex.next()
-			if lex.current() == '"' {
-				lex.next()
-				break
-			}
-			if lex.current() == EOFCHAR {
-				lex.next()
-				return Token(token.ILLEGAL, lex.position-1, lex.text[beg:lex.position-1], general.Err("Unexpectedly face EOF"))
-			}
-		}
-		text := lex.text[beg:lex.position]
-		value := text[1 : len(text)-1]
-		return Token(token.STRING, beg, text, value)
-	}
+	lex.start = lex.position
+	lex.tokenKind = token.ILLEGAL
+	lex.value = nil
 
-	if lex.current() == '\'' {
-		beg := lex.position
-		for {
-			lex.next()
-			cur := lex.current()
-			if cur == '\'' {
-				lex.next()
-				break
-			}
-			if cur == EOFCHAR {
-				lex.next()
-				return Token(token.ILLEGAL, lex.position-1, lex.text[beg:lex.position-1], general.Err("Unexpectedly face EOF"))
-			}
-		}
-
-		text := lex.text[beg:lex.position]
-		if len(text) == 2 || len(text) > 3 {
-			return Token(token.ILLEGAL, beg, text, general.Err("Illegal rune literal"))
-		}
-		value := int(rune(lex.text[beg+1]))
-		return Token(token.CHAR, beg, text, value)
-
-	}
-
-	if unicode.IsDigit(lex.current()) {
-		beg := lex.position
-		tok := token.INT
-		for unicode.IsDigit(lex.current()) {
-			lex.next()
-		}
-		if lex.current() == '.' {
-			lex.next()
-			tok = token.FLOAT
-			for unicode.IsDigit(lex.current()) {
-				lex.next()
-			}
-		}
-		text := lex.text[beg:lex.position]
-		if tok == token.INT {
-			value, err := strconv.ParseInt(text, 10, 64)
-			if err != nil {
-				lex.Diag.InvalidNumber(TextSpan.Span(beg, lex.position), text, "int64")
-				//lex.Diagnose("ERROR: the Number is not Valid int64.", general.ERROR)
-			}
-			return Token(tok, beg, text, value)
-		}
-		value, err := strconv.ParseFloat(text, 8)
-		if err != nil {
-			lex.Diag.InvalidNumber(TextSpan.Span(beg, lex.position), text, "float64")
-			//lex.Diagnose("ERROR: the Number is not Valid float64.", general.ERROR)
-		}
-		return Token(tok, beg, text, value)
-	}
 	if unicode.IsSpace(lex.current()) {
+
 		for unicode.IsSpace(lex.current()) {
 			lex.next()
 		}
 		return nil
-	}
-	if unicode.IsLetter(lex.current()) {
-		beg := lex.position
-		for unicode.IsLetter(lex.current()) {
-			lex.next()
-		}
-		text := lex.text[beg:lex.position]
-		isBool := text == "true" || text == "false"
-		if isBool {
-			return Token(token.BOOL, beg, text, text == "true")
-		}
-		return Token(token.IDENT, beg, text, nil)
 
-	}
-	cur := string(lex.current())
-	pos := lex.position
+	} else if unicode.IsDigit(lex.current()) {
 
-	lex.next()
-	tok := token.LookOperUp(cur)
-	if tok.IsOperator() {
-		ncur := string(lex.current())
-		ntok := token.LookOperUp(ncur)
-		op := cur + ncur
-		optok := token.LookOperUp(op)
-		if ntok.IsOperator() && optok.IsOperator() {
-			lex.next()
-			return Token(optok, pos, op, nil)
+		lex.ReadNumberToken()
+
+	} else if token.IsOper(string(lex.current())) {
+
+		lex.ReadOperatorToken()
+
+	} else if unicode.IsLetter(lex.current()) {
+
+		lex.ReadLetter()
+
+	} else {
+		switch lex.current() {
+		case EOFCHAR:
+			return expression.NewSyntaxToken(token.EOF, lex.position, string(EOFCHAR), nil)
+		case '\'':
+			lex.ReadChar()
+		case '"':
+			lex.ReadString()
+		default:
+			lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position), string(lex.current()))
+			lex.position++
 		}
-		return Token(tok, pos, cur, nil)
 	}
-
-	lex.Diag.BadCharacter(TextSpan.Span(pos, lex.position), cur)
-	return Token(token.ILLEGAL, pos, lex.text[pos:pos+1], nil)
+	t := lex.text[lex.start:lex.position]
+	return expression.NewSyntaxToken(lex.tokenKind, lex.start, t, lex.value)
 
 }
 
-//func (lex *Lexer) Diagnose(text string, l general.Level) {
-//	diag := general.Diag{text, l}
-//	lex.Diagnostics = append(lex.Diagnostics, diag)
-//}
-func Token(token token.Token, position int, text string, value interface{}) *expression.SyntaxToken {
+func (lex *Lexer) ReadNumberToken() {
+	lex.tokenKind = token.INT
+	for unicode.IsDigit(lex.current()) {
+		lex.next()
+	}
+	if lex.current() == '.' {
+		lex.next()
+		lex.tokenKind = token.FLOAT
+		for unicode.IsDigit(lex.current()) {
+			lex.next()
+		}
+	}
+	text := lex.text[lex.start:lex.position]
+	if lex.tokenKind == token.INT {
+		val, err := strconv.ParseInt(text, 10, 64)
+		if err != nil {
+			lex.Diag.InvalidNumber(TextSpan.Span(lex.start, lex.position), text, "int64")
+			//lex.Diagnose("ERROR: the Number is not Valid int64.", general.ERROR)
+		}
+		lex.value = val
+		return
+	}
+	val, err := strconv.ParseFloat(text, 8)
+	if err != nil {
+		lex.Diag.InvalidNumber(TextSpan.Span(lex.start, lex.position), text, "float64")
+		//lex.Diagnose("ERROR: the Number is not Valid float64.", general.ERROR)
+	}
+	lex.value = val
+}
 
-	return expression.NewSyntaxToken(token, position, text, value)
+func (lex *Lexer) ReadOperatorToken() {
+	cur := string(lex.current())
+	lex.next()
+	nchar := string(lex.current())
+	op := cur + nchar
+	lex.value = nil
+	if token.IsOper(nchar) && token.IsOper(op) {
+		lex.next()
+		lex.tokenKind = token.LookOperUp(op)
+		return
+	}
+	lex.tokenKind = token.LookOperUp(cur)
+	return
+
+}
+
+func (lex *Lexer) ReadLetter() {
+	for unicode.IsLetter(lex.current()) {
+		lex.next()
+	}
+	text := lex.text[lex.start:lex.position]
+	isBool := text == "true" || text == "false"
+	if isBool {
+		lex.tokenKind = token.BOOL
+		lex.value = text == "true"
+		return
+	}
+	lex.tokenKind = token.IDENT
+	lex.value = nil
+	return
+}
+
+func (lex *Lexer) ReadString() {
+	for {
+		lex.next()
+		if lex.current() == '"' {
+			lex.next()
+			break
+		}
+		if lex.current() == EOFCHAR {
+			lex.next()
+			lex.tokenKind = token.ILLEGAL
+			lex.value = nil
+			lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position), "Unexpectedly faced EOF")
+		}
+	}
+	text := lex.text[lex.start:lex.position]
+	lex.value = text[1 : len(text)-1]
+	lex.tokenKind = token.STRING
+}
+
+func (lex *Lexer) ReadChar() {
+	for {
+		lex.next()
+		cur := lex.current()
+		if cur == '\'' {
+			lex.next()
+			break
+		}
+		if cur == EOFCHAR {
+			lex.next()
+			lex.tokenKind = token.ILLEGAL
+			lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position), "Unexpectedly faced EOF")
+		}
+	}
+
+	text := lex.text[lex.start:lex.position]
+	if len(text) == 2 || len(text) > 3 {
+		lex.tokenKind = token.ILLEGAL
+		lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position), "Illegal rune literal")
+	}
+	value := int(rune(lex.text[lex.start+1]))
+	lex.value = value
+	lex.tokenKind = token.CHAR
+
 }
