@@ -6,23 +6,13 @@ import (
 )
 
 type ParenExpressionSyntax struct {
+	Syntax
 	LParen     SyntaxToken
 	Expression syntax.ExpressionSyntax
 	RParen     SyntaxToken
 }
 
 func NewParenExpressionSyntax(lparen SyntaxToken, exp syntax.ExpressionSyntax, rparen SyntaxToken) *ParenExpressionSyntax {
-	return &ParenExpressionSyntax{lparen, exp, rparen}
-}
-
-func (p ParenExpressionSyntax) Kind() token.Token {
-	return token.LPAREN
-}
-
-func (p ParenExpressionSyntax) Type() syntax.Type {
-	return syntax.ExpParen
-}
-
-func (p ParenExpressionSyntax) GetChildren() []syntax.ExpressionSyntax {
-	return []syntax.ExpressionSyntax{p.LParen, p.Expression, p.RParen}
+	e := NewSyntax(token.LPAREN, syntax.ExpParen, lparen, exp, rparen)
+	return &ParenExpressionSyntax{e, lparen, exp, rparen}
 }

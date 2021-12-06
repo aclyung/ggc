@@ -6,12 +6,13 @@ import (
 )
 
 type LiteralExpressionSyntax struct {
+	Syntax
 	LiteralToken SyntaxToken
 }
 
 func NewliteralExpressionSyntax(literalToken SyntaxToken) *LiteralExpressionSyntax {
-	syntax := &LiteralExpressionSyntax{literalToken}
-	return syntax
+	exp := NewSyntax(literalToken.Kind(), syntax.ExpLiteral, literalToken)
+	return &LiteralExpressionSyntax{exp, literalToken}
 }
 
 func (LiteralSyntax *LiteralExpressionSyntax) IsKindValid() bool {
@@ -20,18 +21,6 @@ func (LiteralSyntax *LiteralExpressionSyntax) IsKindValid() bool {
 
 }
 
-func (LiteralSyntax *LiteralExpressionSyntax) Kind() token.Token {
-	return LiteralSyntax.LiteralToken.Kind()
-}
-
-func (LiteralSyntax *LiteralExpressionSyntax) Type() syntax.Type {
-	return syntax.ExpLiteral
-}
-
 func (LiteralSyntax *LiteralExpressionSyntax) Value() interface{} {
 	return LiteralSyntax.LiteralToken.Value
-}
-
-func (LiteralSyntax *LiteralExpressionSyntax) GetChildren() []syntax.ExpressionSyntax {
-	return []syntax.ExpressionSyntax{LiteralSyntax.LiteralToken}
 }

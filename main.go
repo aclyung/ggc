@@ -117,7 +117,7 @@ func main() {
 		root := tree.Root
 		kind := root.Kind()
 		if root != nil && show && kind != token.EOF && kind != token.ILLEGAL {
-			fmt.Println("Expression")
+			fmt.Println("Syntax")
 			pprint(tree.Root, "", true)
 		}
 		if len(diag.Notions) > 0 {

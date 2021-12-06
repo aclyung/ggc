@@ -5,24 +5,11 @@ import (
 	"almeng.com/glang/token"
 )
 
-type IllegalExpressionSyntax struct{}
+type IllegalExpressionSyntax struct {
+	Syntax
+}
 
 func NewIllegalExpressionSyntax() *IllegalExpressionSyntax {
-	return &IllegalExpressionSyntax{}
-}
-
-func (eof *IllegalExpressionSyntax) Kind() token.Token {
-	return token.ILLEGAL
-}
-
-func (eof *IllegalExpressionSyntax) Type() syntax.Type {
-	return syntax.ILLEGAL
-}
-
-func (eof *IllegalExpressionSyntax) Value() interface{} {
-	return nil
-}
-
-func (eof *IllegalExpressionSyntax) GetChildren() []syntax.ExpressionSyntax {
-	return []syntax.ExpressionSyntax{}
+	e := NewSyntax(token.ILLEGAL, syntax.ILLEGAL)
+	return &IllegalExpressionSyntax{e}
 }
