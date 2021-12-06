@@ -37,6 +37,10 @@ func (lex *Lexer) next() {
 	lex.position++
 }
 
+func IllegalSyntax(position int) *expression.SyntaxToken {
+	return expression.NewSyntaxToken(token.ILLEGAL, position, "", nil)
+}
+
 func (lex *Lexer) Lex() *expression.SyntaxToken {
 	lex.start = lex.position
 	lex.tokenKind = token.ILLEGAL
@@ -66,9 +70,9 @@ func (lex *Lexer) Lex() *expression.SyntaxToken {
 		case EOFCHAR:
 			return expression.NewSyntaxToken(token.EOF, lex.position, string(EOFCHAR), nil)
 		case '\'':
-			lex.ReadChar()
+			return lex.ReadChar()
 		case '"':
-			lex.ReadString()
+			return lex.ReadString()
 		default:
 			lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position), string(lex.current()))
 			lex.position++
@@ -141,7 +145,7 @@ func (lex *Lexer) ReadLetter() {
 	return
 }
 
-func (lex *Lexer) ReadString() {
+func (lex *Lexer) ReadString() *expression.SyntaxToken {
 	for {
 		lex.next()
 		if lex.current() == '"' {
@@ -152,15 +156,17 @@ func (lex *Lexer) ReadString() {
 			lex.next()
 			lex.tokenKind = token.ILLEGAL
 			lex.value = nil
-			lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position), "Unexpectedly faced EOF")
+			lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position-1), "Unexpectedly faced EOF")
+			return IllegalSyntax(lex.start)
 		}
 	}
 	text := lex.text[lex.start:lex.position]
 	lex.value = text[1 : len(text)-1]
 	lex.tokenKind = token.STRING
+	return expression.NewSyntaxToken(token.STRING, lex.start, text, lex.value)
 }
 
-func (lex *Lexer) ReadChar() {
+func (lex *Lexer) ReadChar() *expression.SyntaxToken {
 	for {
 		lex.next()
 		cur := lex.current()
@@ -171,7 +177,8 @@ func (lex *Lexer) ReadChar() {
 		if cur == EOFCHAR {
 			lex.next()
 			lex.tokenKind = token.ILLEGAL
-			lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position), "Unexpectedly faced EOF")
+			lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position-1), "Unexpectedly faced EOF")
+			return IllegalSyntax(lex.start)
 		}
 	}
 
@@ -183,5 +190,5 @@ func (lex *Lexer) ReadChar() {
 	value := int(rune(lex.text[lex.start+1]))
 	lex.value = value
 	lex.tokenKind = token.CHAR
-
+	return expression.NewSyntaxToken(lex.tokenKind, lex.start, text, lex.value)
 }

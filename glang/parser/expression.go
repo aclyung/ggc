@@ -51,27 +51,33 @@ func (p *parser) ParseAssignmentExpression(parentPrecedence int) syntax.Expressi
 }
 
 func (p *parser) ParsePrevExpression() syntax.ExpressionSyntax {
-	tok := p.current().Kind()
-	var numTok expression.SyntaxToken
-
-	switch tok {
+	switch p.current().Kind() {
 	case token.LPAREN:
-		left := p.NextToken()
-		express := p.ParseExpression(0)
-		right := p.MatchToken(token.RPAREN)
-		return expression.NewParenExpressionSyntax(left, express, right)
-	case token.BOOL:
-		val := p.MatchToken(token.BOOL)
-		return expression.NewliteralExpressionSyntax(val)
-	case token.INT:
-		numTok = p.MatchToken(token.INT)
-	case token.FLOAT:
-		numTok = p.MatchToken(token.FLOAT)
+		return p.ParseParenthesizedExpression()
+	case token.BOOL, token.INT, token.FLOAT:
+		return p.ParseLiteralExpression()
 	case token.IDENT:
-		ident := p.NextToken()
-		return expression.NewNameExpressionSyntax(ident)
+		return p.ParseIdentifierExpression()
+	case token.EOF:
+		return expression.NewEOFExpressionSyntax()
 	default:
-		numTok = p.MatchToken(token.EOF)
+		return expression.NewIllegalExpressionSyntax()
 	}
-	return expression.NewliteralExpressionSyntax(numTok)
+}
+
+func (p *parser) ParseParenthesizedExpression() syntax.ExpressionSyntax {
+	left := p.NextToken()
+	express := p.ParseExpression(0)
+	right := p.MatchToken(token.RPAREN)
+	return expression.NewParenExpressionSyntax(left, express, right)
+}
+
+func (p *parser) ParseLiteralExpression() syntax.ExpressionSyntax {
+	val := p.MatchToken(p.current().Kind())
+	return expression.NewliteralExpressionSyntax(val)
+}
+
+func (p *parser) ParseIdentifierExpression() syntax.ExpressionSyntax {
+	ident := p.NextToken()
+	return expression.NewNameExpressionSyntax(ident)
 }

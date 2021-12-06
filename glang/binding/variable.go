@@ -14,7 +14,7 @@ func NewBoundVariableExpression(variable general.VariableSymbol) *BoundVariableE
 	return &BoundVariableExpression{variable}
 }
 
-func (variable *BoundVariableExpression) Kind() boundNode.BoundNodeKind {
+func (variable *BoundVariableExpression) Kind() boundNode.Kind {
 	return boundNode.Variable
 }
 

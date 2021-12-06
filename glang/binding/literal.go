@@ -10,14 +10,14 @@ type BoundLiteralExpression struct {
 	Value interface{}
 }
 
-var InvalidLiteraExpression = BoundLiteralExpression{Value: nil}
+var InvalidLiteralExpression = &BoundLiteralExpression{Value: nil}
 
-func (b *BoundLiteralExpression) Kind() boundNode.BoundNodeKind {
+func (b *BoundLiteralExpression) Kind() boundNode.Kind {
 	return boundNode.Literal
 }
 
 func (b *BoundLiteralExpression) Type() reflect.Kind {
-	if *b == InvalidLiteraExpression {
+	if b == InvalidLiteralExpression {
 		return reflect.Invalid
 	}
 	return reflect.TypeOf(b.Value).Kind()

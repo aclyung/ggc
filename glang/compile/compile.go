@@ -17,13 +17,19 @@ func NewCompiler(syntax tree.Tree) Compiler {
 }
 
 func (c *Compiler) Evaluate(vars *map[general.VariableSymbol]boundNode.BoundExpression) evaluator.EvaluationResult {
+	defer func() {
+		recover()
+	}()
 	binder := binding.NewBinder(vars)
 	boundExp := binder.Bind(c.Syntax.Root)
 	diag := general.ConcatDiag(c.Syntax.Diagnostics, binder.Diag)
 	if len(diag.Notions) > 0 {
-		return evaluator.Result(diag, binding.InvalidLiteraExpression)
+		return evaluator.Result(diag, binding.InvalidLiteralExpression)
 	}
 	eval := evaluator.NewEvaluator(boundExp, vars)
-	res := eval.Evaluate().(*binding.BoundLiteralExpression)
-	return evaluator.Result(diag, *res)
+	res := eval.Evaluate()
+	if res != nil {
+		return evaluator.Result(diag, res.(*binding.BoundLiteralExpression))
+	}
+	return evaluator.Result(diag, binding.InvalidLiteralExpression)
 }

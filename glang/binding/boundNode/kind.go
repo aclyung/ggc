@@ -1,9 +1,12 @@
 package boundNode
 
-type BoundNodeKind int
+// Node Kind
+
+type Kind int
 
 const (
-	Literal BoundNodeKind = iota
+	EOF Kind = iota
+	Literal
 	Unary
 	Binary
 	Variable

@@ -16,7 +16,7 @@ func NewBoundBinaryExpression(left boundNode.BoundExpression, op BoundBinaryOper
 	return &BoundBinaryExpression{left, op, right}
 }
 
-func (unary *BoundBinaryExpression) Kind() boundNode.BoundNodeKind {
+func (unary *BoundBinaryExpression) Kind() boundNode.Kind {
 	return boundNode.Binary
 }
 

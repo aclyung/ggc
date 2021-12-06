@@ -44,18 +44,23 @@ func Parser(text string) *parser {
 	return pars
 }
 
+// parse to AST
+
 func (p *parser) Parse() tree.Tree {
 	exp := p.ParseExpression(0)
 	eoftok := p.MatchToken(token.EOF)
 	return tree.NewSyntaxTree(p.Diag, exp, eoftok)
 }
 
-// Returns current Token and Moves forward
+// returns current token and moves forward
+
 func (p *parser) NextToken() expression.SyntaxToken {
 	current := p.current()
 	p.position++
 	return current
 }
+
+//
 
 func (p *parser) MatchToken(tok token.Token) expression.SyntaxToken {
 	cur := p.current()

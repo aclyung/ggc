@@ -16,7 +16,7 @@ func NewBoundAssignmentExpression(variable general.VariableSymbol, exp boundNode
 	return &BoundAssignmentExpression{variable, exp}
 }
 
-func (assign *BoundAssignmentExpression) Kind() boundNode.BoundNodeKind {
+func (assign *BoundAssignmentExpression) Kind() boundNode.Kind {
 	return boundNode.Assign
 }
 

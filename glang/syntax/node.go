@@ -3,7 +3,8 @@ package syntax
 type Type int
 
 const (
-	type_beg Type = iota
+	ILLEGAL Type = iota
+	EOF
 	ExpLiteral
 	ExpBinary
 	ExpUnary
@@ -11,11 +12,10 @@ const (
 	ExpAssign
 	ExpName
 	Token
-	type_end
 )
 
 var NodeType = [...]string{
-	ExpLiteral: "NumberExpressionNode",
+	ExpLiteral: "LiteralExpressionNode",
 	ExpBinary:  "BinaryExpressionNode",
 	ExpUnary:   "UnaryExpressionNode",
 	ExpParen:   "ParenthesisExpressionNode",

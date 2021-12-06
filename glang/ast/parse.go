@@ -8,10 +8,15 @@ import (
 	"almeng.com/glang/token"
 )
 
+// Parse text into AST
+
 func ParseTree(text string) tree.Tree {
 	pars := parser.Parser(text)
 	return pars.Parse()
 }
+
+// Parse text into token slice
+
 func ParseTokens(text string) []expression.SyntaxToken {
 	lex := lexer.NewLexer(text)
 	toks := make([]expression.SyntaxToken, 0)

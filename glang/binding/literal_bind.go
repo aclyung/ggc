@@ -7,9 +7,10 @@ import (
 )
 
 func (b *Binder) BindLiteralExpression(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
-	lit := exp.(*expression.Literal)
+	lit := exp.(*expression.LiteralExpressionSyntax)
 	if lit.IsKindValid() {
 		return NewBoundLiteralExpression(lit.Value())
 	}
-	return NewBoundLiteralExpression(int64(0))
+	return InvalidLiteralExpression
+	//return NewBoundLiteralExpression(int64(0))
 }

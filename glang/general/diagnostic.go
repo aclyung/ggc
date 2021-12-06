@@ -50,7 +50,7 @@ func (d *Diags) UndefinedIdentifier(span TextSpan.TextSpan, name string) {
 }
 
 func (d *Diags) UndefinedUnaryOperator(span TextSpan.TextSpan, oper string, operand string) {
-	d.Diagnose(span, "Binary Operator '"+oper+"' is not defined for type "+operand, ERROR)
+	d.Diagnose(span, "Unary Operator '"+oper+"' is not defined for type "+operand, ERROR)
 }
 
 type Diag struct {

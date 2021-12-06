@@ -1,11 +1,10 @@
 package binding
 
 import (
-	"reflect"
-
 	"almeng.com/glang/binding/boundNode"
 	"almeng.com/glang/expression"
 	"almeng.com/glang/general"
+	"almeng.com/glang/general/TextSpan"
 	"almeng.com/glang/syntax"
 )
 
@@ -18,10 +17,12 @@ func NewBinder(vars *map[general.VariableSymbol]boundNode.BoundExpression) *Bind
 	return &Binder{general.NewDiag(), vars}
 }
 
+// bind ExpressionSyntax to BoundExpression
+
 func (b *Binder) Bind(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
 	switch exp.Type() {
 	case syntax.ExpLiteral:
-		return b.BindLiteralExpression(exp.(*expression.Literal))
+		return b.BindLiteralExpression(exp.(*expression.LiteralExpressionSyntax))
 	case syntax.ExpBinary:
 		return b.BindBinaryExpression(exp.(*expression.BinaryExpressionSyntax))
 	case syntax.ExpUnary:
@@ -32,6 +33,12 @@ func (b *Binder) Bind(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
 		return b.BindAssignExpression(exp.(*expression.AssignmentExpressionSyntax))
 	case syntax.ExpName:
 		return b.BindIdentExpression(exp.(*expression.NameExpressionSyntax))
+	case syntax.EOF:
+		b.Diag.Diagnose(TextSpan.Span(0, 0), "EOF", general.ERROR)
+		return NewBoundEOFExpression()
+	case syntax.ILLEGAL:
+		b.Diag.Diagnose(TextSpan.Span(0, 0), "Illegal", general.ERROR)
+		return NewBoundEOFExpression()
 	}
 	panic("Unexpected syntax")
 }
@@ -81,14 +88,16 @@ func (b *Binder) BindIdentExpression(exp *expression.NameExpressionSyntax) bound
 	return NewBoundVariableExpression(val)
 }
 
-func isNumber(p reflect.Type) bool {
-	switch p.Kind() {
-	case reflect.Int64, reflect.Float64:
-		return true
-	}
-	return false
-}
+// implemented in operator bindings
 
-func isBool(p reflect.Type) bool {
-	return p.Kind() == reflect.Bool
-}
+//func isNumber(p reflect.Type) bool {
+//	switch p.Kind() {
+//	case reflect.Int64, reflect.Float64:
+//		return true
+//	}
+//	return false
+//}
+//
+//func isBool(p reflect.Type) bool {
+//	return p.Kind() == reflect.Bool
+//}

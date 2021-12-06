@@ -7,9 +7,9 @@ import (
 
 type EvaluationResult struct {
 	Diags general.Diags
-	binding.BoundLiteralExpression
+	*binding.BoundLiteralExpression
 }
 
-func Result(diag general.Diags, val binding.BoundLiteralExpression) EvaluationResult {
+func Result(diag general.Diags, val *binding.BoundLiteralExpression) EvaluationResult {
 	return EvaluationResult{diag, val}
 }

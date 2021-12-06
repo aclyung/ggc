@@ -5,33 +5,33 @@ import (
 	"almeng.com/glang/token"
 )
 
-type Literal struct {
+type LiteralExpressionSyntax struct {
 	LiteralToken SyntaxToken
 }
 
-func NewliteralExpressionSyntax(literalToken SyntaxToken) *Literal {
-	syntax := &Literal{literalToken}
+func NewliteralExpressionSyntax(literalToken SyntaxToken) *LiteralExpressionSyntax {
+	syntax := &LiteralExpressionSyntax{literalToken}
 	return syntax
 }
 
-func (LiteralSyntax *Literal) IsKindValid() bool {
+func (LiteralSyntax *LiteralExpressionSyntax) IsKindValid() bool {
 	kind := LiteralSyntax.Kind()
 	return kind == token.BOOL || kind == token.INT || kind == token.FLOAT
 
 }
 
-func (LiteralSyntax *Literal) Kind() token.Token {
+func (LiteralSyntax *LiteralExpressionSyntax) Kind() token.Token {
 	return LiteralSyntax.LiteralToken.Kind()
 }
 
-func (LiteralSyntax *Literal) Type() syntax.Type {
+func (LiteralSyntax *LiteralExpressionSyntax) Type() syntax.Type {
 	return syntax.ExpLiteral
 }
 
-func (LiteralSyntax *Literal) Value() interface{} {
+func (LiteralSyntax *LiteralExpressionSyntax) Value() interface{} {
 	return LiteralSyntax.LiteralToken.Value
 }
 
-func (LiteralSyntax *Literal) GetChildren() []syntax.ExpressionSyntax {
+func (LiteralSyntax *LiteralExpressionSyntax) GetChildren() []syntax.ExpressionSyntax {
 	return []syntax.ExpressionSyntax{LiteralSyntax.LiteralToken}
 }

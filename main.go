@@ -7,8 +7,10 @@ import (
 	"almeng.com/glang/expression"
 	"almeng.com/glang/general"
 	"almeng.com/glang/syntax"
+	"almeng.com/glang/token"
 	"encoding/csv"
 	"github.com/c-bata/go-prompt"
+	"runtime/debug"
 	"strings"
 
 	"fmt"
@@ -54,7 +56,7 @@ func completer(d prompt.Document) []prompt.Suggest {
 }
 
 func main() {
-
+	debug.SetGCPercent(2000)
 	// Default prefix is "# ", but you can change it like so:
 	// cli.SetPrefix("my-cli# ")
 
@@ -103,7 +105,7 @@ func main() {
 			fmt.Println(tsPromt[show])
 			continue
 		}
-		if line == "cls\n" {
+		if line == "/cls" {
 			fmt.Print("\033[H\033[2J")
 			continue
 		}
@@ -111,9 +113,11 @@ func main() {
 		tree := ast.ParseTree(line)
 		compiler := compile.NewCompiler(tree)
 		result := compiler.Evaluate(vars)
-		fmt.Println("Expression")
 		diag := result.Diags
-		if tree.Root != nil && show {
+		root := tree.Root
+		kind := root.Kind()
+		if root != nil && show && kind != token.EOF && kind != token.ILLEGAL {
+			fmt.Println("Expression")
 			pprint(tree.Root, "", true)
 		}
 		if len(diag.Notions) > 0 {

@@ -15,7 +15,7 @@ func NewBoundUnaryExpression(op BoundUnaryOperator, operand boundNode.BoundExpre
 	return &BoundUnaryExpression{op, operand}
 }
 
-func (unary *BoundUnaryExpression) Kind() boundNode.BoundNodeKind {
+func (unary *BoundUnaryExpression) Kind() boundNode.Kind {
 	return boundNode.Unary
 }
 
