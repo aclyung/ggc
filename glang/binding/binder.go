@@ -22,17 +22,17 @@ func NewBinder(vars *map[general.VariableSymbol]boundNode.BoundExpression) *Bind
 func (b *Binder) Bind(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
 	switch exp.Type() {
 	case syntax.ExpLiteral:
-		return b.BindLiteralExpression(exp.(*expression.LiteralExpressionSyntax))
+		return b.BindLiteralExpression(exp)
 	case syntax.ExpBinary:
-		return b.BindBinaryExpression(exp.(*expression.BinaryExpressionSyntax))
+		return b.BindBinaryExpression(exp)
 	case syntax.ExpUnary:
-		return b.BindUnaryExpression(exp.(*expression.UnaryExpressionSyntax))
+		return b.BindUnaryExpression(exp)
 	case syntax.ExpParen:
-		return b.BindParenthesisExpression(exp.(*expression.ParenExpressionSyntax))
+		return b.BindParenthesisExpression(exp)
 	case syntax.ExpAssign:
-		return b.BindAssignExpression(exp.(*expression.AssignmentExpressionSyntax))
+		return b.BindAssignExpression(exp)
 	case syntax.ExpName:
-		return b.BindIdentExpression(exp.(*expression.NameExpressionSyntax))
+		return b.BindIdentExpression(exp)
 	case syntax.EOF:
 		b.Diag.Diagnose(TextSpan.Span(0, 0), "EOF", general.ERROR)
 		return NewBoundEOFExpression()
@@ -43,13 +43,14 @@ func (b *Binder) Bind(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
 	panic("Unexpected syntax")
 }
 
-func (b *Binder) BindParenthesisExpression(exp *expression.ParenExpressionSyntax) boundNode.BoundExpression {
-	return b.Bind(exp.Expression)
+func (b *Binder) BindParenthesisExpression(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
+	return b.Bind(exp.(*expression.ParenExpressionSyntax).Expression)
 }
 
-func (b *Binder) BindAssignExpression(exp *expression.AssignmentExpressionSyntax) boundNode.BoundExpression {
-	var name = exp.Ident.Text
-	boundExpression := b.Bind(exp.Expression)
+func (b *Binder) BindAssignExpression(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
+	e := exp.(*expression.AssignmentExpressionSyntax)
+	var name = e.Ident.Text
+	boundExpression := b.Bind(e.Expression)
 	vars := *(b.Variables)
 	var val general.VariableSymbol
 	exist := false
@@ -65,12 +66,13 @@ func (b *Binder) BindAssignExpression(exp *expression.AssignmentExpressionSyntax
 	if (exist && val.Type == boundExpression.Type()) || !exist {
 		return NewBoundAssignmentExpression(newVal, boundExpression)
 	}
-	b.Diag.VariableTypeMisMatch(exp.AssignToken.Span, name, val.Type.String(), boundExpression.Type().String())
+	b.Diag.VariableTypeMisMatch(e.AssignToken.Span, name, val.Type.String(), boundExpression.Type().String())
 	return NewBoundLiteralExpression(int64(0))
 }
 
-func (b *Binder) BindIdentExpression(exp *expression.NameExpressionSyntax) boundNode.BoundExpression {
-	name := exp.Ident.Text
+func (b *Binder) BindIdentExpression(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
+	e := exp.(*expression.NameExpressionSyntax)
+	name := e.Ident.Text
 	vars := *(b.Variables)
 	var val general.VariableSymbol
 	ok := false
@@ -82,22 +84,8 @@ func (b *Binder) BindIdentExpression(exp *expression.NameExpressionSyntax) bound
 		}
 	}
 	if !ok {
-		b.Diag.UndefinedIdentifier(exp.Ident.Span, name)
+		b.Diag.UndefinedIdentifier(e.Ident.Span, name)
 		return NewBoundLiteralExpression(int64(0))
 	}
 	return NewBoundVariableExpression(val)
 }
-
-// implemented in operator bindings
-
-//func isNumber(p reflect.Type) bool {
-//	switch p.Kind() {
-//	case reflect.Int64, reflect.Float64:
-//		return true
-//	}
-//	return false
-//}
-//
-//func isBool(p reflect.Type) bool {
-//	return p.Kind() == reflect.Bool
-//}

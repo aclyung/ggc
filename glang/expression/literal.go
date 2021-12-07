@@ -10,9 +10,10 @@ type LiteralExpressionSyntax struct {
 	LiteralToken SyntaxToken
 }
 
-func NewliteralExpressionSyntax(literalToken SyntaxToken) *LiteralExpressionSyntax {
+func NewLiteralExpressionSyntax(literalToken SyntaxToken) *LiteralExpressionSyntax {
 	exp := NewSyntax(literalToken.Kind(), syntax.ExpLiteral, literalToken)
 	return &LiteralExpressionSyntax{exp, literalToken}
+
 }
 
 func (LiteralSyntax *LiteralExpressionSyntax) IsKindValid() bool {

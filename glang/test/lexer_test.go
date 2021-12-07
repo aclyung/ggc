@@ -113,7 +113,7 @@ func reqSeparator(kind1 token.Token, kind2 token.Token) bool {
 	return false
 }
 
-func TestName(t *testing.T) {
+func TestLexer(t *testing.T) {
 	t.Run("name", func(t *testing.T) {
 		for _, v := range tokenData {
 			Lexer_Lex(v.kind, v.text)

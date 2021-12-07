@@ -13,11 +13,11 @@ type AssignmentExpressionSyntax struct {
 
 func NewAssigmentExpressionSyntax(ident SyntaxToken, tok SyntaxToken, exp syntax.ExpressionSyntax) *AssignmentExpressionSyntax {
 	e := NewSyntax(tok.Kind(), syntax.ExpAssign, ident, tok, exp)
-	assign := &AssignmentExpressionSyntax{
+	assign := AssignmentExpressionSyntax{
 		e,
 		ident,
 		tok,
 		exp,
 	}
-	return assign
+	return &assign
 }

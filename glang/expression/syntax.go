@@ -7,6 +7,7 @@ import (
 )
 
 type SyntaxToken struct {
+	Syntax
 	token    token.Token
 	Position int
 	Text     string
@@ -14,18 +15,7 @@ type SyntaxToken struct {
 	Span     TextSpan.TextSpan
 }
 
-func (tok SyntaxToken) GetChildren() []syntax.ExpressionSyntax {
-	return []syntax.ExpressionSyntax{}
-}
-
-func (tok SyntaxToken) Type() syntax.Type {
-	return syntax.Token
-}
-
-func (tok SyntaxToken) Kind() token.Token {
-	return tok.token
-}
-
 func NewSyntaxToken(token token.Token, position int, text string, value interface{}) *SyntaxToken {
-	return &SyntaxToken{token, position, text, value, TextSpan.Span(position, position+len(text))}
+	e := NewSyntax(token, syntax.Token)
+	return &SyntaxToken{e, token, position, text, value, TextSpan.Span(position, position+len(text))}
 }

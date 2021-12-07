@@ -25,7 +25,7 @@ func Token_Text(t token.Token) {
 	assert.Equal(text, tok.Text)
 }
 
-func TestToken_Name(t *testing.T) {
+func TestToken(t *testing.T) {
 	t.Run("name", func(t *testing.T) {
 		for _, v := range tokenData {
 			Token_Text(v.kind)

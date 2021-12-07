@@ -13,7 +13,3 @@ func NewEOFExpressionSyntax() *EOFExpressionSyntax {
 	e := NewSyntax(token.EOF, syntax.EOF)
 	return &EOFExpressionSyntax{e}
 }
-
-func (eof *EOFExpressionSyntax) Kind() token.Token {
-	return token.EOF
-}

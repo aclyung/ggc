@@ -74,7 +74,7 @@ func (p *parser) ParseParenthesizedExpression() syntax.ExpressionSyntax {
 
 func (p *parser) ParseLiteralExpression() syntax.ExpressionSyntax {
 	val := p.MatchToken(p.current().Kind())
-	return expression.NewliteralExpressionSyntax(val)
+	return expression.NewLiteralExpressionSyntax(val)
 }
 
 func (p *parser) ParseIdentifierExpression() syntax.ExpressionSyntax {
