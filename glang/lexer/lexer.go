@@ -2,7 +2,7 @@ package lexer
 
 import (
 	"almeng.com/glang/expression"
-	"almeng.com/glang/general/TextSpan"
+	"almeng.com/glang/general/Text"
 	"strconv"
 	"unicode"
 
@@ -11,7 +11,7 @@ import (
 )
 
 type Lexer struct {
-	text      string
+	text      Text.Source
 	position  int
 	Diag      general.Diags
 	start     int
@@ -22,15 +22,16 @@ type Lexer struct {
 
 const EOFCHAR = '\000'
 
-func NewLexer(text string) Lexer {
-	return Lexer{text: text, position: 0, Diag: general.NewDiag()} // ,Diagnostics: make([]general.Diag, 0)}
+func NewLexer(source Text.Source) Lexer {
+	//text := source.Text
+	return Lexer{text: source, position: 0, Diag: general.NewDiag()} // ,Diagnostics: make([]general.Diag, 0)}
 }
 
 func (lex *Lexer) current() rune {
-	if lex.position >= len(lex.text) {
+	if lex.position >= lex.text.Length() {
 		return EOFCHAR
 	}
-	return rune(lex.text[lex.position])
+	return rune(lex.text.At(lex.position))
 }
 
 func (lex *Lexer) next() {
@@ -74,11 +75,11 @@ func (lex *Lexer) Lex() *expression.SyntaxToken {
 		case '"':
 			return lex.ReadString()
 		default:
-			lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position), string(lex.current()))
+			lex.Diag.BadCharacter(Text.Span(lex.start, lex.position), string(lex.current()))
 			lex.position++
 		}
 	}
-	t := lex.text[lex.start:lex.position]
+	t := lex.text.ToString(lex.start, lex.position)
 	return expression.NewSyntaxToken(lex.tokenKind, lex.start, t, lex.value)
 
 }
@@ -95,11 +96,11 @@ func (lex *Lexer) ReadNumberToken() {
 			lex.next()
 		}
 	}
-	text := lex.text[lex.start:lex.position]
+	text := lex.text.ToString(lex.start, lex.position)
 	if lex.tokenKind == token.INT {
 		val, err := strconv.ParseInt(text, 10, 64)
 		if err != nil {
-			lex.Diag.InvalidNumber(TextSpan.Span(lex.start, lex.position), text, "int64")
+			lex.Diag.InvalidNumber(Text.Span(lex.start, lex.position), text, "int64")
 			//lex.Diagnose("ERROR: the Number is not Valid int64.", general.ERROR)
 		}
 		lex.value = val
@@ -107,7 +108,7 @@ func (lex *Lexer) ReadNumberToken() {
 	}
 	val, err := strconv.ParseFloat(text, 8)
 	if err != nil {
-		lex.Diag.InvalidNumber(TextSpan.Span(lex.start, lex.position), text, "float64")
+		lex.Diag.InvalidNumber(Text.Span(lex.start, lex.position), text, "float64")
 		//lex.Diagnose("ERROR: the Number is not Valid float64.", general.ERROR)
 	}
 	lex.value = val
@@ -133,7 +134,7 @@ func (lex *Lexer) ReadLetter() {
 	for unicode.IsLetter(lex.current()) {
 		lex.next()
 	}
-	text := lex.text[lex.start:lex.position]
+	text := lex.text.ToString(lex.start, lex.position)
 	isBool := text == "true" || text == "false"
 	if isBool {
 		lex.tokenKind = token.BOOL
@@ -156,11 +157,11 @@ func (lex *Lexer) ReadString() *expression.SyntaxToken {
 			lex.next()
 			lex.tokenKind = token.ILLEGAL
 			lex.value = nil
-			lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position-1), "Unexpectedly faced EOF")
+			lex.Diag.BadCharacter(Text.Span(lex.start, lex.position-1), "Unexpectedly faced EOF")
 			return IllegalSyntax(lex.start)
 		}
 	}
-	text := lex.text[lex.start:lex.position]
+	text := lex.text.ToString(lex.start, lex.position)
 	lex.value = text[1 : len(text)-1]
 	lex.tokenKind = token.STRING
 	return expression.NewSyntaxToken(token.STRING, lex.start, text, lex.value)
@@ -177,17 +178,17 @@ func (lex *Lexer) ReadChar() *expression.SyntaxToken {
 		if cur == EOFCHAR {
 			lex.next()
 			lex.tokenKind = token.ILLEGAL
-			lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position-1), "Unexpectedly faced EOF")
+			lex.Diag.BadCharacter(Text.Span(lex.start, lex.position-1), "Unexpectedly faced EOF")
 			return IllegalSyntax(lex.start)
 		}
 	}
 
-	text := lex.text[lex.start:lex.position]
+	text := lex.text.ToString(lex.start, lex.position)
 	if len(text) == 2 || len(text) > 3 {
 		lex.tokenKind = token.ILLEGAL
-		lex.Diag.BadCharacter(TextSpan.Span(lex.start, lex.position), "Illegal rune literal")
+		lex.Diag.BadCharacter(Text.Span(lex.start, lex.position), "Illegal rune literal")
 	}
-	value := int(rune(lex.text[lex.start+1]))
+	value := int(lex.text.At(lex.start + 1))
 	lex.value = value
 	lex.tokenKind = token.CHAR
 	return expression.NewSyntaxToken(lex.tokenKind, lex.start, text, lex.value)

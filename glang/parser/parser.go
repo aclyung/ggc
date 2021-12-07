@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"almeng.com/glang/general/Text"
 	"bufio"
 	"fmt"
 	"os"
@@ -19,9 +20,9 @@ type parser struct {
 	//Diagnostics []general.Diag
 }
 
-func Parser(text string) *parser {
+func Parser(source Text.Source) *parser {
 	pars := &parser{}
-	lex := lexer.NewLexer(text)
+	lex := lexer.NewLexer(source)
 	pars.tokens = *new([]expression.SyntaxToken)
 	pars.position = 0
 

@@ -4,7 +4,7 @@ import (
 	"almeng.com/glang/binding/boundNode"
 	"almeng.com/glang/expression"
 	"almeng.com/glang/general"
-	"almeng.com/glang/general/TextSpan"
+	"almeng.com/glang/general/Text"
 	"almeng.com/glang/syntax"
 )
 
@@ -34,10 +34,10 @@ func (b *Binder) Bind(exp syntax.ExpressionSyntax) boundNode.BoundExpression {
 	case syntax.ExpName:
 		return b.BindIdentExpression(exp)
 	case syntax.EOF:
-		b.Diag.Diagnose(TextSpan.Span(0, 0), "EOF", general.ERROR)
+		b.Diag.Diagnose(Text.Span(0, 0), "EOF", general.ERROR)
 		return NewBoundEOFExpression()
 	case syntax.ILLEGAL:
-		b.Diag.Diagnose(TextSpan.Span(0, 0), "Illegal", general.ERROR)
+		b.Diag.Diagnose(Text.Span(0, 0), "Illegal", general.ERROR)
 		return NewBoundEOFExpression()
 	}
 	panic("Unexpected syntax")

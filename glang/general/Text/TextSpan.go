@@ -1,4 +1,4 @@
-package TextSpan
+package Text
 
 type TextSpan struct {
 	Beg int
