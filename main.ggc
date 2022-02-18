@@ -25,7 +25,37 @@ fun main() {
     fun gen<type T> hh<T> {
         l := hh<T>{v: &T{}}
 
-    } 
+    }
+
+    oper (f *matrix) rmul(tar int) matrix {
+        m := f.clone()
+        for i := 0; i < f.rows; i++ {
+            for j := 0; j < f.cols; j++ {
+                m.data[i][j] *= tar
+            }
+        }
+        return m
+    }
+
+    oper (f *matrix) mul(tar int) matrix {
+        m := f.clone()
+        for i := 0; i < f.rows; i++ {
+            for j := 0; j < f.cols; j++ {
+                m.data[i][j] *= tar
+            }
+        }
+        return m
+    }
+
+    oper (f *matrix) muleq(tar matrix) {
+        m := f.clone()
+        for i := 0; i < f.rows; i++ {
+            for j := 0; j < f.cols; j++ {
+                m.data[i][j] *= tar.data[i][j]
+            }
+        }
+        f = m
+    }
 
     oper (f foo) plus(tar foo) foo {
         r := &foo{}
