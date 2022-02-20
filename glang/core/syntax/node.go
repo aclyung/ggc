@@ -13,9 +13,9 @@ func (n *node) Pos() Pos { return n.pos }
 func (*node) aNode()     {}
 
 type File struct {
-	//PkgName
-	DeclList []Decl
-	EOF      Pos
+	SpaceName *Name
+	DeclList  []Decl
+	EOF       Pos
 	node
 }
 

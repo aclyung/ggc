@@ -12,14 +12,23 @@ func completer(d prompt.Document) []prompt.Suggest {
 }
 
 func main() {
-	line := "var word = 3 \nvar o = 2"
-	//err := syntax.ParseString(line, nil)
+	line := ` 
+space pkg
+
+var nam = 9
+var o = 700
+
+
+ var i7 = 2
+
+`
+
+	//err := syntax.TestParse(line, nil)
 	//if err == nil {
 	//	print("passed")
 	//}
-	syntax.TokenizingTest(line)
-	syntax.ParseString(line, nil)
-	syntax.ParseString(line, nil)
+	syntax.TestParse(line, nil, true)
+	//syntax.TestParse(line, nil)
 }
 
 //func main() {

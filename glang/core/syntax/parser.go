@@ -22,7 +22,13 @@ func (p *parser) EOF() error {
 
 	f := new(File)
 	f.pos = p.pos()
-
+	if !p.got(_Space) {
+		p.error("space must be declared first")
+		return Error{}
+	}
+	f.SpaceName = p.name()
+	p.want(_Semi)
+	p.print("space: " + f.SpaceName.Value)
 	for p.token != _EOF {
 		switch p.token {
 		case _Var:
@@ -38,8 +44,8 @@ func (p *parser) EOF() error {
 }
 
 func (p *parser) trace(msg string) func() {
-	p.print(msg + " (")
-	const tab = ". "
+	p.print(msg + ":")
+	const tab = "    "
 	p.indent += tab
 
 	return func() {
@@ -47,12 +53,19 @@ func (p *parser) trace(msg string) func() {
 		if err := recover(); err != nil {
 			panic(err)
 		}
-		p.print(")")
+		//p.print("")
 	}
 }
 
+var line = -1
+
 func (p *parser) print(msg string) {
-	fmt.Printf("%5d: %s%s\n", p.line, p.indent, msg)
+	if line != p.line {
+		fmt.Printf("line %-4d%s%s\n", p.line, p.indent, msg)
+	} else {
+		fmt.Printf("         %s%s\n", p.indent, msg)
+	}
+	line = p.line
 }
 
 // Testing Literal
@@ -292,16 +305,16 @@ func (p *parser) nameList(first *Name) []*Name {
 
 func (p *parser) operand() (rtn Expr) {
 	if trace {
-		defer p.trace("operand " + p.token.String())()
+		defer p.trace("operand ")()
 	}
 
 	rtn = &BadExpr{}
-
+	tok := p.token.String()
 	switch p.token {
 	case _Literal:
 		lit := p.literal()
 		rtn = lit
-		p.print("value: " + lit.Value)
+		p.print(tok + "(" + lit.Value + ")")
 	}
 	return
 }

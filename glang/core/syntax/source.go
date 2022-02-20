@@ -2,11 +2,12 @@ package syntax
 
 import (
 	"io"
-	"unicode/utf8"
 )
 
 type source struct {
-	in        string
+	in  string
+	len int
+
 	line, col int
 	b, r, e   int
 	ch        rune
@@ -19,8 +20,10 @@ func (s *source) init(r io.Reader, errh func(line, col int, msg string)) {
 	} else {
 		s.in = string(b)
 	}
+	s.len = len(s.in)
 	s.ch = ' '
 	s.line, s.col = 0, 0
+	s.b, s.r, s.e = 0, 0, 0
 	s.errh = errh
 }
 
@@ -39,34 +42,30 @@ func (s *source) error(msg string) {
 
 // advance moves the lexer forward one rune.
 func (s *source) nextch() {
-redo:
-	if s.r >= len(s.in) {
-		if s.ch == -1 {
-			return
-		}
-		s.r++
-		s.ch = -1
-		return
-	}
-	s.col++
+	//redo:
 	if s.ch == '\n' {
 		s.line++
 		s.col = 0
 	}
-	if s.ch = rune(s.in[s.r]); s.ch < utf8.RuneSelf {
-		s.r++
-		if s.ch == 0 {
-			s.error("invalid NUL character")
-			goto redo
-		}
+
+	if s.r >= s.len {
+		s.r = s.len + 1
+		s.ch = -1
 		return
 	}
+	s.col++
+
+	s.ch = rune(s.in[s.r])
+	s.r++
+	return
 
 }
 
-func (s *source) start() { s.b = s.r }
+func (s *source) start() {
+	s.b = s.r
+}
 func (s *source) segment() string {
-	lit := s.in[s.b : s.r-1]
+	lit := s.in[s.b-1 : s.r-1]
 	return lit
 }
 

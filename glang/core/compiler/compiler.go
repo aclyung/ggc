@@ -24,7 +24,7 @@ const src = 1
 const f = src + 1
 
 func CompileString(src string) {
-	_ = syntax.ParseString(src, errh)
+	_ = syntax.TestParse(src, errh)
 	return
 }
 
