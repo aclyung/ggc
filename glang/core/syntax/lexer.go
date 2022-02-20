@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 )
@@ -23,16 +24,31 @@ type lexer struct {
 
 const EOFCHAR = '\000'
 
-func TokenizingTest(str string) {
+func TokenizingTest(filename, str string) {
+	testPrint("Testing Tokenization")
+	println("Input " + filename + " { \n" + str + "\n}")
 	r := strings.NewReader(str)
 	var p parser
+	start := time.Now()
 	p.init(r, nil)
 	p.next()
+	testPrint("Results")
 	for p.token != _EOF {
-		print(p.token.String() + " ")
+		str := p.token.String()
+		switch p.token {
+		case _Semi:
+			println(str + " ")
+		case _Name, _Literal:
+			str += "(" + p.lit + ")"
+			fallthrough
+		default:
+			print(str + " ")
+		}
 		p.next()
+
 	}
-	println("\nTokenizing Test End\n")
+	testPrint("Tokenizing Test End")
+	result(true, time.Since(start).Seconds())
 }
 
 func (l *lexer) init(r io.Reader, errh func(line, col int, msg string)) {
@@ -77,12 +93,13 @@ func (l *lexer) next() {
 	semi := l.semi
 	l.semi = false
 
-redo:
-	l.source.start()
+	//redo:
 	//iLine, iCol := l.pos()
+
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' && !semi || l.ch == '\r' {
 		l.nextch()
 	}
+	l.source.start()
 
 	l.line, l.col = l.pos()
 
@@ -102,10 +119,8 @@ redo:
 
 	case '\n':
 		l.nextch()
-		l.r--
 		l.lit = "newline"
 		l.token = _Semi
-		goto redo
 
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		l.number(false)
