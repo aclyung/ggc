@@ -35,6 +35,7 @@ const (
 	// keywords
 	_Var      // var
 	_If       // if
+	_Space    // space
 	_Oper     // oper
 	_Func     // func
 	_For      // for
@@ -113,7 +114,9 @@ var tokenString = map[token]string{
 	_Colon:  ":",
 	_Dot:    ".",
 
-	_Var: "var",
+	_Var:   "var",
+	_If:    "if",
+	_Space: "space",
 }
 
 func keyword(word string) token {
