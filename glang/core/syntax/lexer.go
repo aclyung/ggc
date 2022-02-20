@@ -39,10 +39,23 @@ func TokenizingTest(filename, str string) {
 		case _Semi:
 			println(str + " ")
 		case _Name, _Literal:
-			str += "(" + p.lit + ")"
+			color := White
+			if p.token == _Literal {
+				color = Green
+			}
+			str = color + str
+			str += Reset + "(" + p.lit + ")"
 			fallthrough
+
 		default:
-			print(str + " ")
+			color := Cyan
+			if p.token.isKeyword() {
+				color = Purple
+			}
+			if p.token == _Assign {
+				color = Cyan
+			}
+			print(color + str + " " + Reset)
 		}
 		p.next()
 

@@ -17,7 +17,9 @@ var Reset string = "\033[0m"
 var Cyan string = "\033[36m"
 var Green string = "\033[32m"
 var Yellow string = "\033[33m"
-
+var White string = "\033[97m"
+var Blue string = "\033[34m"
+var Purple string = "\033[35m"
 var _ error = Error{}
 
 func (e Error) Error() string {
@@ -63,7 +65,7 @@ func Parse(filename string, src io.Reader, errh ErrHandler) error {
 	var p parser
 	p.init(src, errh)
 	p.next()
-	fmt.Println("File " + filename + "\n")
+	fmt.Println(Green + "File " + filename + "\n")
 	return p.EOF()
 }
 
