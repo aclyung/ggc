@@ -65,7 +65,7 @@ func Parse(filename string, src io.Reader, errh ErrHandler) error {
 	var p parser
 	p.init(src, errh)
 	p.next()
-	fmt.Println(Green + "File " + filename + "\n")
+	fmt.Println(Blue + "File " + filename + "\n")
 	return p.EOF()
 }
 
