@@ -13,6 +13,11 @@ type Error struct {
 	Msg string
 }
 
+var Reset string = "\033[0m"
+var Cyan string = "\033[36m"
+var Green string = "\033[32m"
+var Yellow string = "\033[33m"
+
 var _ error = Error{}
 
 func (e Error) Error() string {
@@ -24,7 +29,7 @@ type ErrHandler func(err error)
 var file rune = 'a' - 1
 
 func testPrint(msg string) {
-	str := "===== " + msg
+	str := Cyan + "===== " + msg + Reset
 	println("\n" + str + "\n")
 }
 
@@ -35,10 +40,10 @@ func result(pass bool, time float64) {
 	}
 	time = float64(int(time*100)) / 100
 
-	println("--- " + res + ": " + fmt.Sprint(time) + "s")
+	println(Green + "--- " + res + ": " + fmt.Sprint(time) + "s" + Reset)
 }
 
-func TestParse(src string, errh ErrHandler, testTok bool) error {
+func TestParseString(src string, errh ErrHandler, testTok bool) error {
 	file++
 	fname := string(file)
 	if testTok {
@@ -62,7 +67,7 @@ func Parse(filename string, src io.Reader, errh ErrHandler) error {
 	return p.EOF()
 }
 
-func ParseFile(filename string, errh ErrHandler) error {
+func TestParseFile(filename string, errh ErrHandler, t bool) error {
 	f, err := os.Open(filename)
 	if err != nil {
 		if errh != nil {
@@ -70,6 +75,12 @@ func ParseFile(filename string, errh ErrHandler) error {
 		}
 		return err
 	}
-	defer f.Close()
-	return Parse(filename, f, errh)
+	b, err := io.ReadAll(f)
+	if err != nil {
+		if errh != nil {
+			errh(err)
+		}
+		return err
+	}
+	return TestParseString(string(b), errh, t)
 }

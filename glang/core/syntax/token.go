@@ -117,6 +117,8 @@ var tokenString = map[token]string{
 	_Var:   "var",
 	_If:    "if",
 	_Space: "space",
+	_Oper:  "oper",
+	_Func:  "func",
 }
 
 func keyword(word string) token {

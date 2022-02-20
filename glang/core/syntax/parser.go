@@ -27,8 +27,8 @@ func (p *parser) EOF() error {
 		return Error{}
 	}
 	f.SpaceName = p.name()
-	p.want(_Semi)
 	p.print("space: " + f.SpaceName.Value)
+	p.want(_Semi)
 	for p.token != _EOF {
 		switch p.token {
 		case _Var:
@@ -37,6 +37,12 @@ func (p *parser) EOF() error {
 		case _Literal:
 			_ = p.gotLiteral()
 		case _Semi:
+			p.next()
+		case _Oper, _Func:
+			p.errorAt(p.pos(), "ERROR: cannot resolve token "+p.token.String()+"("+p.segment()+")")
+			p.next()
+		default:
+			p.errorAt(p.pos(), "ERROR: non-declaration statement outside function body: "+p.token.String()+"("+p.segment()+")")
 			p.next()
 		}
 	}
@@ -60,6 +66,7 @@ func (p *parser) trace(msg string) func() {
 var line = -1
 
 func (p *parser) print(msg string) {
+
 	if line != p.line {
 		fmt.Printf("line %-4d%s%s\n", p.line, p.indent, msg)
 	} else {
@@ -120,7 +127,8 @@ func (p *parser) error(msg string) { p.errorAt(p.pos(), msg) }
 func (p *parser) errorAt(pos Pos, msg string) {
 	err := Error{pos, msg}
 	if p.errh == nil {
-		panic(err)
+		println(Yellow + err.Msg + Reset)
+		return
 	}
 	p.errh(err)
 }

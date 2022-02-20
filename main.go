@@ -12,23 +12,25 @@ func completer(d prompt.Document) []prompt.Suggest {
 }
 
 func main() {
-	line := ` 
-space pkg
-
-var nam = 9
-var o = 700
-
-
- var i7 = 2
-
-`
-
-	//err := syntax.TestParse(line, nil)
-	//if err == nil {
-	//	print("passed")
-	//}
-	syntax.TestParse(line, nil, true)
-	//syntax.TestParse(line, nil)
+	path := "./main.gg"
+	syntax.TestParseFile(path, nil, true)
+	//	line := `
+	//space pkg
+	//
+	//var nam = 9
+	//var o = 700
+	//
+	//
+	// var i7 = 2
+	//
+	//`
+	//
+	//	//err := syntax.TestParseString(line, nil)
+	//	//if err == nil {
+	//	//	print("passed")
+	//	//}
+	//	syntax.TestParseString(line, nil, true)
+	//syntax.TestParseString(line, nil)
 }
 
 //func main() {
