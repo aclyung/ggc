@@ -1,7 +1,7 @@
 space main
 
 
-var nam =    700
+var nam =    700 + 2
 var o = 3
    var i =1
 

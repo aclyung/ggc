@@ -236,6 +236,7 @@ func (p *parser) binaryExpr(x Expr, prec int) Expr {
 		t.pos = p.pos()
 		t.Op = p.op
 		tprec := p.prec
+		p.print("operator(" + t.Op.String() + ")")
 		p.next()
 		t.X = x
 		t.Y = p.binaryExpr(nil, tprec)
@@ -313,7 +314,7 @@ func (p *parser) nameList(first *Name) []*Name {
 
 func (p *parser) operand() (rtn Expr) {
 	if trace {
-		defer p.trace("operand ")()
+		defer p.trace("operand")()
 	}
 
 	rtn = &BadExpr{}
