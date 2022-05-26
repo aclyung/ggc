@@ -1,13 +1,18 @@
 space main
 
+var d int
+func hi (column int, row int, r float) {
+    var c = column + row + r
+    d
+    b.c.o
+    d += c
+ }
 
-var nam =    700 + 2
-var o = 3
-   var i =1
 
+oper (a matrix) mm(b matrix) matrix { 3 }
+func sum(a int) int {
+    hi(1, 5, 300)
+    a+s
+    return
+}
 
-        var t = 9
-
-func oper
-
-nam

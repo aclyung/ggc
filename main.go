@@ -1,119 +1,157 @@
 package main
 
-import (
-	"almeng.com/glang/core/syntax"
-	"github.com/c-bata/go-prompt"
-)
+import "almeng.com/glang/core/compiler"
 
-const config = "./config.json"
-
-func completer(d prompt.Document) []prompt.Suggest {
-	return prompt.FilterHasPrefix(nil, d.GetWordBeforeCursor(), true)
-}
+//	"github.com/c-bata/go-prompt"
+//)
+//
+//const config = "./config.json"
+//
+//func completer(d prompt.Document) []prompt.Suggest {
+//	return prompt.FilterHasPrefix(nil, d.GetWordBeforeCursor(), true)
+//}
 
 func main() {
 	path := "./main.gg"
-	syntax.TestParseFile(path, nil, true)
-	//	line := `
-	//space pkg
-	//
-	//var nam = 9
-	//var o = 700
-	//
-	//
-	// var i7 = 2
-	//
-	//`
-	//
-	//	//err := syntax.TestParseString(line, nil)
-	//	//if err == nil {
-	//	//	print("passed")
-	//	//}
-	//	syntax.TestParseString(line, nil, true)
-	//syntax.TestParseString(line, nil)
+	compiler.Compile(path)
 }
 
-//func main() {
-//	debug.SetGCPercent(2000)
-//	show := true
-//	tsPromt := map[bool]string{true: "Showing parse trees", false: "Not showing parse trees"}
-//	str := ""
-//	lines := ""
-//	vars := &map[general.VariableSymbol]boundNode.BoundExpression{}
-//	source := &Text.Source{}
-//	l := 1
-//	for {
-//		line := ""
-//		if general.IsEmpty(str) {
-//			fmt.Print("\033[32mglang>\033[0m")
-//		} else {
-//			fmt.Print("\033[32m     |\033[0m")
-//		}
-//		line = prompt.Input("", completer)
-//		isBlank := general.IsEmpty(line)
+//type Node[T any] struct {
+//	Element T
+//	Next    *Node[T]
+//}
 //
-//		if len(str) == 0 {
-//			if isBlank {
-//				continue
-//			}
-//			if line == "/exit" {
-//				fmt.Println("Existing...")
-//				break
-//			}
-//			if line == "/show" {
-//				show = !show
-//				fmt.Println(tsPromt[show])
-//				continue
-//			}
-//			if line == "/cls" {
-//				fmt.Print("\033[H\033[2J")
-//				continue
-//			}
-//		}
-//		str = strings.TrimSuffix(str, "\n") + line
-//		start := time.Now()
+//type LinkList[T any] struct {
+//	Root *Node[T]
+//	len  int
+//}
 //
-//		tree := ast.ParseTree(str, source)
-//
-//		if !isBlank && len(tree.Diagnostics.Notions) != 0 {
-//			//lines += "\t"+"\033[31mInvalid Expression"+"\033[0m"+"\n"
-//			continue
-//		}
-//
-//		compiler := compile.NewCompiler(tree)
-//		result := compiler.Evaluate(vars)
-//		diag := result.Diags
-//		root := tree.Root.Expression
-//		kind := root.Kind()
-//		if root != nil && show && kind != token.EOF && kind != token.ILLEGAL {
-//			fmt.Println("Syntax")
-//			fmt.Println(root)
-//		}
-//		lines += fmt.Sprint(l, "\t", str)
-//		l++
-//		if len(diag.Notions) > 0 {
-//			lines += "\t" + "\033[31mInvalid Expression" + "\033[0m" + "\n"
-//			general.Alert(tree.Source, diag, str+" ")
-//		} else {
-//			fmt.Println("result: " + fmt.Sprint(result.Type()) + " | " + fmt.Sprint(result.Value))
-//			lines += fmt.Sprintln("\t\033[32mEvaluation Result: " + fmt.Sprint(result.Type()) + " | " + fmt.Sprint(result.Value) + "\033[0m")
-//		}
-//		fmt.Println(time.Since(start))
-//		str = ""
+//func emptyRoot[T any]() *Node[T] {
+//	return &Node[T]{
+//		Next: nil,
 //	}
-//	fmt.Print(lines)
+//}
+//
+//func (l *LinkList[T]) Len() int {
+//	return l.len
+//}
+//
+//func NewList[T any]() LinkList[T] {
+//	return LinkList[T]{Root: emptyRoot[T](), len: 0}
+//}
+//
+//func (l LinkList[T]) String() string {
+//	str := "[ "
+//	cur := l.Root
+//	if l.len == 0 {
+//		return "[]"
+//	}
+//	for cur.Next != nil {
+//		str += fmt.Sprint(cur.Element) + " "
+//		cur = cur.Next
+//	}
+//	str += fmt.Sprint(cur.Element) + " ]"
+//	return str
+//}
+//
+//func (l *LinkList[T]) Set(i int, e T) error {
+//	n := l.getNode(i)
+//	n.Element = e
+//	return nil
+//}
+//
+//func (l *LinkList[T]) Add(e T) {
+//	node := &Node[T]{
+//		Element: e,
+//		Next:    nil,
+//	}
+//	last := l.lastNode()
+//	if l.len == 0 {
+//		*last = *node
+//		goto rtn
+//	}
+//	last.Next = node
+//rtn:
+//	l.len++
+//	return
+//}
+//
+//func (l *LinkList[T]) Remove(i int) T {
+//	if l.len == 0 {
+//		panic("the list is empty")
+//	}
+//	rtn := l.getNode(i).Element
+//	if i == 0 {
+//		*(l.Root) = *(l.Root.Next)
+//	} else if l.len-1 == i {
+//		n := l.getNode(i - 1)
+//		n.Next = nil
+//	} else {
+//		c := l.getNode(i - 1)
+//		n := l.getNode(i + 1)
+//		*(c.Next) = *n
+//	}
+//	l.len--
+//	return rtn
+//}
+//
+//func (l *LinkList[T]) lastNode() *Node[T] {
+//	cur := l.Root
+//	for cur.Next != nil {
+//		cur = cur.Next
+//	}
+//	return cur
+//}
+//
+//func (l *LinkList[T]) getNode(i int) *Node[T] {
+//	if l.len-1 < i {
+//		panic("out of bound Exception")
+//	}
+//	cur := l.Root
+//	for index := 0; index < i; index++ {
+//		cur = cur.Next
+//	}
+//	return cur
+//}
+//
+//func (l *LinkList[T]) Last() T {
+//	if l.len == 0 {
+//		panic("list is empty")
+//	}
+//	cur := l.Root
+//	for cur.Next != nil {
+//		cur = cur.Next
+//	}
+//	return cur.Element
+//}
+//
+//func (l *LinkList[T]) Get(i int) T {
+//	if l.len-1 < i {
+//		panic("out of bound Exception")
+//	}
+//	cur := l.Root
+//	for index := 0; index < i; index++ {
+//		cur = cur.Next
+//	}
+//	return cur.Element
 //}
 
-//1. load file 2.
-// conf := file.GetConfig(config)
-// conf.PrintInfo()
-// path := conf.Path
-// ext := conf.Ext
-
-// fileMan := file.NewFile()
-// compfiles := fileMan.WalkPath(path).ExtractExt(ext)
-// files := *compfiles.Open()
-// for _, v := range files {
-// 	fmt.Println("\nFile name: ", v.Name())
-// 	// fileMan.ReadLine(v)
-// 	fmt.Println(parser.Parser(*v))
+//l := NewList[int]()
+//l.Add(10)
+//l.Add(20)
+//l.Add(10)
+//l.Add(10)
+//l.Add(20)
+//l.Add(10)
+//l.Add(10)
+//l.Add(20)
+//l.Add(10)
+//l.Add(10)
+//l.Add(20)
+//l.Add(10)
+//err := l.Set(2, 300)
+//if err != nil {
+//	return
+//}
+//fmt.Println(l.Remove(1))
+//fmt.Println(l.Len())

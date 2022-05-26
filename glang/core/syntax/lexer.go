@@ -33,30 +33,32 @@ func TokenizingTest(filename, str string) {
 	p.init(r, nil)
 	p.next()
 	testPrint("Results")
+
 	for p.token != _EOF {
 		str := p.token.String()
 		switch p.token {
 		case _Semi:
 			println(str + " ")
+			p.next()
+			continue
+		case _Operator:
+			str = p.op.String()
 		case _Name, _Literal:
-			color := White
+			color := Yellow
 			if p.token == _Literal {
 				color = Green
 			}
 			str = color + str
-			str += Reset + "(" + p.lit + ")"
-			fallthrough
-
-		default:
-			color := Cyan
-			if p.token.isKeyword() {
-				color = Purple
-			}
-			if p.token == _Assign {
-				color = Cyan
-			}
-			print(color + str + " " + Reset)
+			str += White + "(" + p.lit + ")"
 		}
+		color := Cyan
+		if p.token.isKeyword() {
+			color = Purple
+		}
+		if p.token == _Assign || p.token == _Operator {
+			color = Cyan
+		}
+		print(color + str + " " + Reset)
 		p.next()
 
 	}

@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/almenglee/general v0.1.0 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/llir/ll v0.0.0-20210719001141-246f2b6b1fa9 // indirect
@@ -29,4 +30,4 @@ require (
 
 replace almeng.com/glang v1.0.0 => ./glang
 
-go 1.17
+go 1.18
