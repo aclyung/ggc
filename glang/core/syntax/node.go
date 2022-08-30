@@ -35,6 +35,14 @@ type (
 		decl
 	}
 
+	TypeDecl struct {
+		Group *Group
+		Name  *Name
+		Alias bool
+		Type  Expr
+		decl
+	}
+
 	VarDecl struct {
 		Group    *Group // nil means not part of a group
 		NameList *Name
@@ -68,6 +76,11 @@ type (
 	Stmt interface {
 		Node
 		aStmt()
+	}
+
+	SimpleStmt interface {
+		Stmt
+		aSimpleStmt()
 	}
 
 	ExprStmt struct {
@@ -107,7 +120,7 @@ type (
 		Lhs Expr
 		Op  Operator
 		Rhs Expr
-		stmt
+		simpleStmt
 	}
 
 	IfStmt struct {
@@ -118,9 +131,9 @@ type (
 	}
 
 	ForStmt struct {
-		Init simpleStmt
+		Init SimpleStmt
 		Cond Expr
-		Post simpleStmt
+		Post SimpleStmt
 		Body *BlockStmt
 		stmt
 	}
@@ -196,6 +209,8 @@ type (
 		node
 	}
 )
+
+func (simpleStmt) aSimpleStmt() {}
 
 type expr struct{ node }
 

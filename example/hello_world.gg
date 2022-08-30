@@ -1,0 +1,5 @@
+space main
+
+func main() {
+    print("hello")
+}

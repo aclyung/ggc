@@ -1,18 +1,33 @@
 space main
 
 var d int
+type t int
+type matrix array_of_int
+
+
+
 func hi (column int, row int, r float) {
-    var c = column + row + r
-    d
+    var c = column + row * r
+    var d = "hello"
     b.c.o
     d += c
  }
 
+// a + b
+oper (a matrix) add(b matrix) matrix { 3 }
 
-oper (a matrix) mm(b matrix) matrix { 3 }
+// b + a
+oper (a matrix) radd(b matrix) matrix { 3 }
+
+
 func sum(a int) int {
+    for a<0 {
+
+    }
+    if a>10 {
+
+    }
     hi(1, 5, 300)
     a+s
     return
 }
-

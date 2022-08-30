@@ -16,6 +16,7 @@ func (p Pos) String() string {
 
 // func (pos Pos) IsKnown() bool  { return pos.line > 0 }
 
-func (p Pos) Pos() Pos  { return p }
-func (p Pos) Line() int { return p.line }
-func (p Pos) Col() int  { return p.col }
+func (p Pos) Pos() Pos      { return p }
+func (p Pos) Line() int     { return p.line }
+func (p Pos) Col() int      { return p.col }
+func (p Pos) IsKnown() bool { return p.line > 0 }

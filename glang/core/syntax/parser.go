@@ -35,6 +35,9 @@ func (p *parser) EOF() *File {
 	// TopLevelDecl = Declaration | FuncDecl | OperDecl .
 	for p.token != _EOF {
 		switch p.token {
+		case _Type:
+			p.next()
+			f.DeclList = p.appendGroup(f.DeclList, p.typeDecl)
 		case _Var:
 			p.next()
 			f.DeclList = p.appendGroup(f.DeclList, p.varDecl)
@@ -45,9 +48,9 @@ func (p *parser) EOF() *File {
 		case _Oper:
 			p.next()
 			f.DeclList = p.appendGroup(f.DeclList, p.operDecl)
-		case _Type:
-			p.errorAt(p.pos(), "WARNING: declaration statement not implemented yet: "+Red+p.token.String()+Reset)
-			p.next()
+		//case _Type:
+		//	p.errorAt(p.pos(), "WARNING: declaration statement not implemented yet: "+Red+p.token.String()+Reset)
+		//	p.next()
 		// Throwing exception here
 		case _Semi:
 			p.next()
@@ -214,6 +217,30 @@ func (p *parser) appendGroup(list []Decl, f func(group *Group) Decl) []Decl {
 	return list
 }
 
+// TypeSpec = identifier [ TypeParams ] [ "=" ] Type .
+func (p *parser) typeDecl(group *Group) Decl {
+	if trace {
+		defer p.trace("typeDecl")()
+	}
+
+	d := new(TypeDecl)
+	d.pos = p.pos()
+	d.Group = group
+
+	d.Name = p.name()
+	d.Alias = p.gotAssign()
+	d.Type = p.typeOrNil()
+
+	if d.Type == nil {
+		d.Type = p.badExpr()
+		p.syntaxError("in type declaration")
+	} else if trace {
+		p.print("id: " + d.Name.Value)
+		p.print("type: " + d.Type.(*Name).Value)
+	}
+	return d
+}
+
 // VarDecl = "var" identifier ( Type [ "=" Expr ] | "=" Expr ) .
 func (p *parser) varDecl(group *Group) Decl {
 	if trace {
@@ -337,7 +364,7 @@ func (p *parser) funcType() ([]*Field, Expr) {
 // Statements
 
 // SimpleStmt = EmptyStmt | ExpressionStmt | IncDecStmt | Assignment | ShortVarDecl .
-func (p *parser) simpleStmt(ls Expr, keyword token) Stmt {
+func (p *parser) simpleStmt(ls Expr, keyword token) SimpleStmt {
 	if trace {
 		defer p.trace("simpleStmt")()
 	}
@@ -458,8 +485,10 @@ func (p *parser) stmtOrNil() Stmt {
 		return p.blockStmt("")
 	case _Literal, _Name:
 		return p.simpleStmt(nil, 0)
-	// case _For, _If:
-
+	case _For:
+		return p.forStmt()
+	case _If:
+		return p.ifStmt()
 	case _Return:
 		s := new(ReturnStmt)
 		s.pos = p.pos()
@@ -479,6 +508,7 @@ func (p *parser) stmtOrNil() Stmt {
 
 // ----------------------------------------------------------------------------
 // Expressions
+
 func (p *parser) expr() Expr {
 	if trace {
 		defer p.trace("expr")()
@@ -738,6 +768,122 @@ func (p *parser) nameList(first *Name) []*Name {
 	}
 
 	return l
+}
+
+func (p *parser) forStmt() Stmt {
+	if trace {
+		defer p.trace("forStmt")()
+	}
+
+	s := new(ForStmt)
+	s.pos = p.pos()
+
+	s.Init, s.Cond, s.Post = p.header(_For)
+	s.Body = p.blockStmt("for clause")
+
+	return s
+}
+
+func (p *parser) header(keyword token) (init SimpleStmt, cond Expr, post SimpleStmt) {
+	p.want(keyword)
+	if p.token == _Lbrace {
+		if keyword == _If {
+			p.syntaxError("missing condition in if statement")
+			cond = p.badExpr()
+		}
+		return
+	}
+
+	if p.token != _Semi {
+		// accept potential varDecl but complain
+		if p.got(_Var) {
+			p.syntaxError(fmt.Sprintf("var declaration not allowed in %s initializer", tokstring(keyword)))
+		}
+		init = p.simpleStmt(nil, keyword)
+	}
+	var condStmt SimpleStmt
+	var semi struct {
+		pos Pos
+		lit string // valid if pos.IsKnown()
+	}
+	if p.token != _Lbrace {
+		if p.token == _Semi {
+			semi.pos = p.pos()
+			semi.lit = p.lit
+			p.next()
+		} else {
+			// asking for a '{' rather than a ';' here leads to a better error message
+			p.want(_Lbrace)
+		}
+		if keyword == _For {
+			if p.token != _Semi {
+				if p.token == _Lbrace {
+					p.syntaxError("expecting for loop condition")
+					goto done
+				}
+				condStmt = p.simpleStmt(nil, 0 /* range not permitted */)
+			}
+			p.want(_Semi)
+			if p.token != _Lbrace {
+				post = p.simpleStmt(nil, 0 /* range not permitted */)
+				if a, _ := post.(*AssignStmt); a != nil && a.Op == Def {
+					p.syntaxErrorAt(a.Pos(), "cannot declare in post statement of for loop")
+				}
+			}
+		} else if p.token != _Lbrace {
+			condStmt = p.simpleStmt(nil, keyword)
+		}
+	} else {
+		condStmt = init
+		init = nil
+	}
+done:
+	// unpack condStmt
+	switch s := condStmt.(type) {
+	case nil:
+		if keyword == _If && semi.pos.IsKnown() {
+			if semi.lit != "semicolon" {
+				p.syntaxErrorAt(semi.pos, fmt.Sprintf("unexpected %s, expecting { after if clause", semi.lit))
+			} else {
+				p.syntaxErrorAt(semi.pos, "missing condition in if statement")
+			}
+			b := new(BadExpr)
+			b.pos = semi.pos
+			cond = b
+		}
+	case *ExprStmt:
+		cond = s.X
+	default:
+		p.syntaxErrorAt(s.Pos(), fmt.Sprintf("cannot use %s as value", s))
+	}
+	return
+}
+
+func (p *parser) badExpr() *BadExpr {
+	b := new(BadExpr)
+	b.pos = p.pos()
+	return b
+}
+
+func (p *parser) ifStmt() *IfStmt {
+	if trace {
+		defer p.trace("ifStmt")()
+	}
+	s := new(IfStmt)
+	s.pos = p.pos()
+	_, s.Cond, _ = p.header(_If)
+	s.Block = p.blockStmt("If clause")
+	if p.got(_Else) {
+		switch p.token {
+		case _If:
+			s.Else = p.ifStmt()
+		case _Lbrace:
+			s.Else = p.blockStmt("")
+		default:
+			p.syntaxError("else must be followed by if or statement block")
+		}
+	}
+	return s
 }
 
 func unparen(x Expr) Expr {

@@ -35,8 +35,10 @@ const (
 	// keywords
 	keyword_beg
 	_If     // if
+	_Else   // else
 	_Space  // space
 	_Var    // var
+	_Const  // const
 	_Type   // type
 	_Oper   // oper
 	_Func   // func
@@ -69,20 +71,16 @@ const (
 //	_Else        // else
 //	_Fallthrough // fallthrough
 //	_For         // for
-//	_Func        // func
 //	_Go          // go
-//	_Goto        // goto
-//	_If          // if
+//	_Goto        // goto\
 //	_Import      // import
 //	_Interface   // interface
 //	_Map         // map
 //	_Package     // package
 //	_Range       // range
-//	_Return      // return
 //	_Select      // select
 //	_Struct      // struct
 //	_Switch      // switch
-//	_Var         // var
 //
 //	// empty line comment to exclude it from .String
 //	tokenCount //
@@ -121,8 +119,10 @@ var tokenString = map[token]string{
 	_Dot:    ".",
 
 	_Var:      "var",
+	_Const:    "const",
 	_Type:     "type",
 	_If:       "if",
+	_Else:     "else",
 	_Space:    "space",
 	_Oper:     "oper",
 	_Func:     "func",
@@ -143,27 +143,21 @@ var tokenString = map[token]string{
 
 var keywordToken map[token]string
 
-func keyword(word string) token {
-	if keywordToken == nil {
-		keywordToken = make(map[token]string)
-		for i := keyword_beg + 1; i < keyword_end; i++ {
-			keywordToken[i] = tokenString[i]
-		}
-	}
-	for tok, v := range keywordToken {
-		if v == word {
-			return tok
-		}
-	}
-	return -1
-}
-
 func (t token) isKeyword() bool {
 	return t > keyword_beg && t < keyword_end
 }
 
 func (t token) isOperator() bool {
 	return t > operator_beg && t < operator_end
+}
+
+func keyword(word string) token {
+	for tok, str := range tokenString {
+		if str == word {
+			return tok
+		}
+	}
+	return _Name
 }
 
 type LitKind int

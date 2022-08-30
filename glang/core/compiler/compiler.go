@@ -1,25 +1,66 @@
 package compiler
 
 import (
+	buitin "almeng.com/glang/core/builtin"
 	"almeng.com/glang/core/syntax"
+	"almeng.com/glang/global"
 	"fmt"
 	"github.com/almenglee/general"
+	"github.com/llir/llvm/ir"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
-
-	"github.com/llir/llvm/ir"
-	"github.com/llir/llvm/ir/types"
 )
 
 var errh = func(err error) { println(err.Error()) }
+
+type Compiler struct {
+	Target Target
+	Module *ir.Module
+	Spaces general.List[*Space]
+	Global *Space
+}
+
+func NewCompiler(t Target) (c Compiler) {
+	mod := ir.NewModule()
+	c = Compiler{t, mod, nil, nil}
+	return
+}
+
+func (c *Compiler) InitGlobal() {
+	c.Global = &Space{
+		Name: &syntax.Name{Value: "#global"},
+		Decl: general.EmptyList[syntax.Decl](),
+	}
+	buitin.InitTypes(c.Global.Decl)
+	buitin.InitConsts(c.Global.Decl)
+	buitin.InitModule(c.Module)
+
+}
+
+type Space struct {
+	Name *syntax.Name
+	Decl *general.List[syntax.Decl]
+}
 
 func Compile(filename string) {
 	f, _ := os.Open(filename)
 	// Node
 	t := NewTarget(AARCH64, APPLE, DARWIN)
 	c := NewCompiler(t)
+	global.Init(c.Module)
 	c.InitGlobal()
+	if true {
+		var src string
+		f, _ := os.Open(filename)
+		if b, err := io.ReadAll(f); err != nil {
+			panic(err)
+		} else {
+			src = string(b)
+		}
+		syntax.TokenizingTest(filename, src)
+	}
 	file := syntax.Parse(filename, f, errh)
 	// TODO: Node to llvm IR
 	c.CompileFile(file)
@@ -61,35 +102,8 @@ func Compile(filename string) {
 	return
 }
 
-func (c *Compiler) CompileFile(f *syntax.File) {
-
-}
-
 func (c *Compiler) GetIR() string {
 	return c.Module.String()
-}
-
-func NewCompiler(t Target) (c Compiler) {
-	mod := ir.NewModule()
-	c = Compiler{t, mod, nil, nil}
-	c.InitGlobal()
-	return
-}
-
-type Compiler struct {
-	Target Target
-	Module *ir.Module
-	Spaces general.List[*Space]
-	Global *Space
-}
-
-func (c *Compiler) InitGlobal() {
-
-}
-
-type Space struct {
-	Name *syntax.Name
-	Decl *general.List[syntax.Decl]
 }
 
 func CodeGen(node *syntax.File) {
@@ -99,33 +113,4 @@ func CodeGen(node *syntax.File) {
 		ParseDecl(s, m, d)
 	}
 	s.Decl.Each(decl)
-}
-
-func ParseDecl(s *Space, m *ir.Module, decl syntax.Decl) {
-	switch decl.(type) {
-	case *syntax.FuncDecl:
-		f := decl.(*syntax.FuncDecl)
-		name := f.Name.Value
-		var ret types.Type = types.Void
-		if f.Return != nil {
-			ret = RetType(m, f.Return.(*syntax.Name))
-		}
-
-		m.NewFunc(name, ret)
-	case *syntax.VarDecl:
-		_ = decl.(*syntax.VarDecl)
-	case *syntax.OperDecl:
-		_ = decl.(*syntax.OperDecl)
-
-	}
-}
-
-func RetType(m *ir.Module, name *syntax.Name) types.Type {
-	t := general.AsList(m.TypeDefs).Filter(func(i int, e types.Type) bool {
-		return e.Name() == name.Value
-	})
-	if t == nil {
-
-	}
-	return nil
 }

@@ -4,6 +4,7 @@ build/
 .VSCodeCounter
 .DS_Store
 main
+include
 
 test*
 !glang/

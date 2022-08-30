@@ -139,13 +139,10 @@ func (l *lexer) next() {
 
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		l.number(false)
-	case '=':
-		l.nextch()
-		l.token = _Assign
 	case '"':
-		l.nextch()
+		l.stdString()
 	case '\'':
-		l.nextch()
+		l.rune()
 	case '(':
 		l.nextch()
 		l.token = _Lparen
@@ -239,6 +236,58 @@ func (l *lexer) next() {
 		l.nextch()
 		l.op, l.prec = Rem, precMul
 		goto assignoper
+	case '<':
+		l.nextch()
+		if l.ch == '=' {
+			l.nextch()
+			l.op, l.prec = Leq, precCmp
+			l.token = _Operator
+			break
+		}
+		if l.ch == '<' {
+			l.nextch()
+			l.op, l.prec = Shl, precMul
+			goto assignoper
+		}
+		l.op, l.prec = Lss, precCmp
+		l.token = _Operator
+
+	case '>':
+		l.nextch()
+		if l.ch == '=' {
+			l.nextch()
+			l.op, l.prec = Geq, precCmp
+			l.token = _Operator
+			break
+		}
+		if l.ch == '>' {
+			l.nextch()
+			l.op, l.prec = Shr, precMul
+			goto assignoper
+		}
+		l.op, l.prec = Gtr, precCmp
+		l.token = _Operator
+
+	case '=':
+		l.nextch()
+		if l.ch == '=' {
+			l.nextch()
+			l.op, l.prec = Eql, precCmp
+			l.token = _Operator
+			break
+		}
+		l.token = _Assign
+
+	case '!':
+		l.nextch()
+		if l.ch == '=' {
+			l.nextch()
+			l.op, l.prec = Neq, precCmp
+			l.token = _Operator
+			break
+		}
+		l.op, l.prec = Not, 0
+		l.token = _Operator
 	}
 
 	return
@@ -251,6 +300,91 @@ assignoper:
 	}
 	l.token = _Operator
 
+}
+func (l *lexer) rune() {
+	ok := true
+	l.nextch()
+
+	n := 0
+	for ; ; n++ {
+		if l.ch == '\'' {
+			if ok {
+				if n == 0 {
+					l.errorf("empty rune literal or unescaped '")
+					ok = false
+				} else if n != 1 {
+					l.errorAtf(0, "more than one character in rune literal")
+					ok = false
+				}
+			}
+			l.nextch()
+			break
+		}
+		if l.ch == '\\' {
+			l.nextch()
+			if !l.escape('\'') {
+				ok = false
+			}
+			continue
+		}
+		if l.ch == '\n' {
+			if ok {
+				l.errorf("newline in rune literal")
+				ok = false
+			}
+			break
+		}
+		if l.ch < 0 {
+			if ok {
+				l.errorAtf(0, "rune literal not terminated")
+				ok = false
+			}
+			break
+		}
+		l.nextch()
+	}
+
+	l.setLit(RuneLit, ok)
+}
+
+func (l *lexer) stdString() {
+	ok := true
+	l.nextch()
+
+	for {
+		if l.ch == '"' {
+			l.nextch()
+			break
+		}
+		if l.ch == '\\' {
+			l.nextch()
+			if !l.escape('"') {
+				ok = false
+			}
+			continue
+		}
+		if l.ch == '\n' {
+			l.errorf("newline in string")
+			ok = false
+			break
+		}
+		if l.ch < 0 {
+			l.errorAtf(0, "string not terminated")
+			ok = false
+			break
+		}
+		l.nextch()
+	}
+
+	l.setLit(StringLit, ok)
+}
+
+func (l *lexer) escape(quote rune) bool {
+	switch l.ch {
+	case quote, '\\', 'a', 'b', 'f', 'n', 'r', 't', 'v':
+		return true
+	}
+	return false
 }
 
 func (l *lexer) number(afterDot bool) {

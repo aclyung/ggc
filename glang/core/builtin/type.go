@@ -1,21 +1,27 @@
 package buitin
 
 import (
-	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/types"
 )
 
 var (
-	Bool   types.Type = types.NewInt(8)
-	String types.Type = types.NewStruct(types.I64, types.NewPointer(types.I8))
-	Int    types.Type = types.I64
-	Float  types.Type = types.Float
-	Type   types.Type
+	Int8   = types.I8
+	Int    = types.I64
+	Bool   = types.NewInt(8)
+	String = types.NewStruct(types.I64, types.NewPointer(types.I8))
+	Float  = types.Float
+	Void   = types.Void
 )
 
-func InitModule(m *ir.Module) {
-	m.NewTypeDef("bool", Bool)
-	m.NewTypeDef("string", String)
-	m.NewTypeDef("int", Int)
-	m.NewTypeDef("float", Float)
+type TypeDef struct {
+	N string
+	T types.Type
+}
+
+var ITypes = []TypeDef{
+	TypeDef{"int8", Int8},
+	TypeDef{"int", Int},
+	TypeDef{"bool", Bool},
+	TypeDef{"string", String},
+	TypeDef{"float", Float},
 }
