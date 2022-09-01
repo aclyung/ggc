@@ -1,6 +1,9 @@
 package main
 
-import "almeng.com/glang/core/compiler"
+import (
+	"almeng.com/glang/core/compiler"
+	"flag"
+)
 
 //	"github.com/c-bata/go-prompt"
 //)
@@ -12,8 +15,12 @@ import "almeng.com/glang/core/compiler"
 //}
 
 func main() {
+	debug := flag.Bool("d", false, "enable debug diagnosis")
+	verbose := flag.Bool("v", false, "enable verbose debug diagnosis")
+	*debug = *debug || *verbose
+	flag.Parse()
 	path := "./main.gg"
-	compiler.Compile(path)
+	compiler.Compile(path, *debug, *verbose)
 }
 
 //type Node[T any] struct {

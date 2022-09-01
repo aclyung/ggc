@@ -6,18 +6,17 @@ import (
 	"strings"
 )
 
-const trace = true
-
 type parser struct {
 	errh ErrHandler
 	lexer
-	indent string
-	first  error
+	indent  string
+	first   error
+	verbose bool
 }
 
 // nil means error has occured
 func (p *parser) EOF() *File {
-	if trace {
+	if p.verbose {
 		defer p.trace("file")()
 	}
 
@@ -49,7 +48,7 @@ func (p *parser) EOF() *File {
 			p.next()
 			f.DeclList = p.appendGroup(f.DeclList, p.operDecl)
 		//case _Type:
-		//	p.errorAt(p.pos(), "WARNING: declaration statement not implemented yet: "+Red+p.token.String()+Reset)
+		//	p.errorAt(p.pos(), "WARNING: declaration statement not implemented yet: "+Red+p.Token.String()+Reset)
 		//	p.next()
 		// Throwing exception here
 		case _Semi:
@@ -83,7 +82,9 @@ func (p *parser) trace(msg string) func() {
 var line = -1
 
 func (p *parser) print(msg string) {
-
+	if !p.verbose {
+		return
+	}
 	if line != p.line {
 		fmt.Printf("line %-4d%s%s\n", p.line, p.indent, msg)
 	} else {
@@ -100,13 +101,13 @@ func (p *parser) gotLiteral() error {
 	return nil
 }
 
-func (p *parser) want(tok token) {
+func (p *parser) want(tok Token) {
 	if !p.got(tok) {
 		p.syntaxError(fmt.Sprintf("expected %s, got %s", tok, p.token))
 	}
 }
 
-func (p *parser) got(tok token) bool {
+func (p *parser) got(tok Token) bool {
 	if p.token == tok {
 		p.next()
 		return true
@@ -124,7 +125,7 @@ func (p *parser) init(r io.Reader, errh ErrHandler) {
 	)
 }
 
-func tokstring(tok token) string {
+func tokstring(tok Token) string {
 	switch tok {
 	case _Comma:
 		return "comma"
@@ -150,11 +151,11 @@ func (p *parser) errorAt(pos Pos, msg string) {
 func (p *parser) syntaxError(msg string) { p.syntaxErrorAt(p.pos(), msg) }
 
 func (p *parser) syntaxErrorAt(pos Pos, msg string) {
-	if trace {
+	if p.verbose {
 		p.print(Yellow + "syntax error: " + msg + Reset)
 	}
 
-	//if p.token == _EOF && p.first != nil {
+	//if p.Token == _EOF && p.first != nil {
 	//	return // avoid meaningless follow-up errors
 	//}
 
@@ -167,12 +168,12 @@ func (p *parser) syntaxErrorAt(pos Pos, msg string) {
 	case strings.HasPrefix(msg, "expecting "):
 		msg = ", " + msg
 	default:
-		// plain error - we don't care about current token
+		// plain error - we don't care about current Token
 		p.errorAt(pos, "syntax error: "+msg)
 		return
 	}
 
-	// determine token string
+	// determine Token string
 	var tok string
 	switch p.token {
 	case _Name, _Semi:
@@ -219,7 +220,7 @@ func (p *parser) appendGroup(list []Decl, f func(group *Group) Decl) []Decl {
 
 // TypeSpec = identifier [ TypeParams ] [ "=" ] Type .
 func (p *parser) typeDecl(group *Group) Decl {
-	if trace {
+	if p.verbose {
 		defer p.trace("typeDecl")()
 	}
 
@@ -234,7 +235,7 @@ func (p *parser) typeDecl(group *Group) Decl {
 	if d.Type == nil {
 		d.Type = p.badExpr()
 		p.syntaxError("in type declaration")
-	} else if trace {
+	} else if p.verbose {
 		p.print("id: " + d.Name.Value)
 		p.print("type: " + d.Type.(*Name).Value)
 	}
@@ -243,7 +244,7 @@ func (p *parser) typeDecl(group *Group) Decl {
 
 // VarDecl = "var" identifier ( Type [ "=" Expr ] | "=" Expr ) .
 func (p *parser) varDecl(group *Group) Decl {
-	if trace {
+	if p.verbose {
 		defer p.trace("varDecl")()
 	}
 
@@ -274,7 +275,7 @@ func (p *parser) varDecl(group *Group) Decl {
 // FuncDecl = "func" FuncName Signature FuncBody .
 // FuncName = identifier .
 func (p *parser) funcDeclOrNil(group *Group) Decl {
-	if trace {
+	if p.verbose {
 		defer p.trace("funcDecl")()
 	}
 
@@ -311,7 +312,7 @@ func (p *parser) funcDeclOrNil(group *Group) Decl {
 // ReturnType = Type .
 // OperBody = FuncBody .
 func (p *parser) operDecl(group *Group) Decl {
-	if trace {
+	if p.verbose {
 		defer p.trace("operDecl")()
 	}
 
@@ -336,13 +337,13 @@ func (p *parser) operDecl(group *Group) Decl {
 	d.Return = p.name()
 	p.print("return type: " + d.Return.(*Name).Value)
 	d.Body = p.funcBody()
+
 	return d
 }
 
 // FuncBody = Block .
 func (p *parser) funcBody() *BlockStmt {
 	body := p.blockStmt("")
-
 	return body
 }
 
@@ -350,9 +351,6 @@ func (p *parser) funcType() ([]*Field, Expr) {
 	params := make([]*Field, 0)
 	p.want(_Lparen)
 	params = p.paramlist()
-	if params == nil {
-		p.errorAt(p.pos(), "error occurred")
-	}
 	ftype := p.typeOrNil()
 	if ftype != nil {
 		p.print("return type: " + ftype.(*Name).Value)
@@ -364,8 +362,8 @@ func (p *parser) funcType() ([]*Field, Expr) {
 // Statements
 
 // SimpleStmt = EmptyStmt | ExpressionStmt | IncDecStmt | Assignment | ShortVarDecl .
-func (p *parser) simpleStmt(ls Expr, keyword token) SimpleStmt {
-	if trace {
+func (p *parser) simpleStmt(ls Expr, keyword Token) SimpleStmt {
+	if p.verbose {
 		defer p.trace("simpleStmt")()
 	}
 
@@ -376,20 +374,20 @@ func (p *parser) simpleStmt(ls Expr, keyword token) SimpleStmt {
 	pos := p.pos()
 	switch p.token {
 	case _AssignOp, _Assign:
-		if trace {
+		if p.verbose {
 			defer p.trace("assignment")()
 		}
 		op := p.op
 		p.next()
 		return p.assignStmt(pos, op, ls, p.expr())
 	//case _Define:
-	//	if trace {
-	//		defer p.trace("shortVarDecl")()
+	//	if p.verbose {
+	//		defer p.p.verbose("shortVarDecl")()
 	//	}
 	//	p.next()
 	//	return p.
 	default:
-		if trace {
+		if p.verbose {
 			defer p.trace("exprStmt")()
 		}
 		s := new(ExprStmt)
@@ -401,7 +399,7 @@ func (p *parser) simpleStmt(ls Expr, keyword token) SimpleStmt {
 }
 
 func (p *parser) declStmt(f func(*Group) Decl) *DeclStmt {
-	if trace {
+	if p.verbose {
 		defer p.trace("declStmt")()
 	}
 
@@ -427,7 +425,7 @@ func (p *parser) assignStmt(pos Pos, op Operator, lhs, rhs Expr) *AssignStmt {
 
 // Block = "{" StatementList "}" .
 func (p *parser) blockStmt(context string) *BlockStmt {
-	if trace {
+	if p.verbose {
 		defer p.trace("blockStmt")()
 	}
 	s := new(BlockStmt)
@@ -438,6 +436,7 @@ func (p *parser) blockStmt(context string) *BlockStmt {
 		return nil
 	}
 	s.StmtList = p.stmtList()
+
 	s.Rbrace = p.pos()
 	p.want(_Rbrace)
 
@@ -446,7 +445,7 @@ func (p *parser) blockStmt(context string) *BlockStmt {
 
 // StatementList = { Statement ";" } .
 func (p *parser) stmtList() (l []Stmt) {
-	if trace {
+	if p.verbose {
 		defer p.trace("stmtList")()
 	}
 
@@ -469,7 +468,7 @@ func (p *parser) stmtList() (l []Stmt) {
 // 		Declaration | SimpleStmt | ReturnStmt | BreakStmt | ContinueStmt |
 //		Block | IfStmt | ForStmt .
 func (p *parser) stmtOrNil() Stmt {
-	if trace {
+	if p.verbose {
 		defer p.trace("stmt")()
 	}
 
@@ -510,7 +509,7 @@ func (p *parser) stmtOrNil() Stmt {
 // Expressions
 
 func (p *parser) expr() Expr {
-	if trace {
+	if p.verbose {
 		defer p.trace("expr")()
 	}
 
@@ -519,7 +518,7 @@ func (p *parser) expr() Expr {
 
 // Expr = UnaryExpr | Expr binary_op Expr .
 func (p *parser) binaryExpr(prec int) Expr {
-	// don't trace binaryExpr - only leads to overly nested trace output
+	// don't p.verbose binaryExpr - only leads to overly nested p.verbose output
 
 	x := p.unaryExpr()
 	for (p.token == _Operator) && p.prec > prec {
@@ -538,7 +537,7 @@ func (p *parser) binaryExpr(prec int) Expr {
 
 // UnaryExpr = PrimaryExpr | unary_op UnaryExpr .
 func (p *parser) unaryExpr() Expr {
-	if trace {
+	if p.verbose {
 		defer p.trace("unaryExpr")()
 	}
 	switch p.token {
@@ -567,7 +566,7 @@ func (p *parser) unaryExpr() Expr {
 }
 
 func (p *parser) operand() (rtn Expr) {
-	if trace {
+	if p.verbose {
 		defer p.trace("operand")()
 	}
 
@@ -593,7 +592,7 @@ func (p *parser) operand() (rtn Expr) {
 // Selector       = "." identifier .
 // Call			  = "(" [ ExprList ] ")" .
 func (p *parser) pexpr() Expr {
-	if trace {
+	if p.verbose {
 		defer p.trace("pexpr")()
 	}
 	x := p.operand()
@@ -620,7 +619,7 @@ loop:
 		case _Lparen:
 			t := new(CallExpr)
 			t.pos = pos
-			t.Fun = x
+			t.Func = x
 			t.ArgList = p.argList()
 			x = t
 
@@ -725,7 +724,7 @@ redo:
 }
 
 func (p *parser) argList() []Expr {
-	if trace {
+	if p.verbose {
 		defer p.trace("argList")()
 	}
 	list := make([]Expr, 0)
@@ -744,7 +743,7 @@ func (p *parser) argList() []Expr {
 // ----------------------------------------------------------------------------
 // Common
 func (p *parser) name() *Name {
-	// no tracing to avoid overly verbose output
+	// no tracing to avoid overly p.verbose output
 
 	if p.token == _Name {
 		n := NewName(p.pos(), p.lit)
@@ -758,7 +757,7 @@ func (p *parser) name() *Name {
 }
 
 func (p *parser) nameList(first *Name) []*Name {
-	if trace {
+	if p.verbose {
 		defer p.trace("nameList")()
 	}
 
@@ -771,7 +770,7 @@ func (p *parser) nameList(first *Name) []*Name {
 }
 
 func (p *parser) forStmt() Stmt {
-	if trace {
+	if p.verbose {
 		defer p.trace("forStmt")()
 	}
 
@@ -784,7 +783,7 @@ func (p *parser) forStmt() Stmt {
 	return s
 }
 
-func (p *parser) header(keyword token) (init SimpleStmt, cond Expr, post SimpleStmt) {
+func (p *parser) header(keyword Token) (init SimpleStmt, cond Expr, post SimpleStmt) {
 	p.want(keyword)
 	if p.token == _Lbrace {
 		if keyword == _If {
@@ -866,7 +865,7 @@ func (p *parser) badExpr() *BadExpr {
 }
 
 func (p *parser) ifStmt() *IfStmt {
-	if trace {
+	if p.verbose {
 		defer p.trace("ifStmt")()
 	}
 	s := new(IfStmt)

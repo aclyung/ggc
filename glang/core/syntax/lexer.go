@@ -14,7 +14,7 @@ type lexer struct {
 	semi bool
 
 	line, col int // position
-	token     token
+	token     Token
 	lit       string   // valid if tok is _Name, _Literal, or _Semi ("semicolon", "newline", or "EOF"); may be malformed if bad is true
 	bad       bool     // valid if tok is _Literal, true if a syntax error occurred, lit may be malformed
 	kind      LitKind  // valid if tok is _Literal
@@ -75,7 +75,7 @@ func (l *lexer) errorf(format string, args ...interface{}) {
 	l.error(fmt.Sprintf(format, args...))
 }
 
-// errorAtf reports an error at a byte column offset relative to the current token start.
+// errorAtf reports an error at a byte column offset relative to the current Token start.
 func (l *lexer) errorAtf(offset int, format string, args ...interface{}) {
 	l.errh(l.line, l.col+offset, fmt.Sprintf(format, args...))
 }
@@ -225,6 +225,13 @@ func (l *lexer) next() {
 		l.token = _IncOp
 	case '/':
 		l.nextch()
+		if l.ch == '/' {
+			for l.ch != '\n' && l.ch != -1 {
+				l.nextch()
+			}
+			l.next()
+			return
+		}
 		l.op, l.prec = Div, precMul
 		if l.ch != '+' {
 			goto assignoper
@@ -377,6 +384,41 @@ func (l *lexer) stdString() {
 	}
 
 	l.setLit(StringLit, ok)
+	seg := l.lit
+	seg = seg[1 : len(seg)-1]
+	str := ""
+	for i := 0; i < len(seg); i++ {
+		if seg[i] == '\\' {
+			_len := len(seg)
+			if _len < i+2 {
+				panic("invalid string lit")
+			}
+			switch seg[i+1] {
+			case '\\':
+				str += "\\"
+			case 'a':
+				str += "\a"
+			case 'b':
+				str += "\b"
+			case 'f':
+				str += "\f"
+			case 'n':
+				str += "\n"
+			case 'r':
+				str += "\r"
+			case 't':
+				str += "\t"
+			case 'v':
+				str += "\v"
+			default:
+				panic("invalid string lit")
+			}
+			i++
+			continue
+		}
+		str += string(seg[i])
+	}
+	l.lit = str
 }
 
 func (l *lexer) escape(quote rune) bool {
@@ -438,19 +480,19 @@ func isDecimal(ch rune) bool { return '0' <= ch && ch <= '9' }
 
 //
 //func (next *lexer) ReadNumberToken() {
-//	next.token = INT
+//	next.Token = INT
 //	for isDecimal(next.current()) {
 //		next.nextch()
 //	}
 //	if next.current() == '.' {
 //		next.nextch()
-//		next.token = FLOAT
+//		next.Token = FLOAT
 //		for isDecimal(next.current()) {
 //			next.nextch()
 //		}
 //	}
 //	text := next.text[next.start:next.col]
-//	if next.token == INT {
+//	if next.Token == INT {
 //		val, err := strconv.ParseInt(text, 10, 64)
 //		if err != nil {
 //			fmt.Println(next.text[next.start:next.col], " type not match error[Int64]")

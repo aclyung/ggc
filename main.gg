@@ -1,33 +1,43 @@
 space main
 
-var d int
 type t int
-type matrix array_of_int
 
-
-
-func hi (column int, row int, r float) {
+func hi (column int, row int, r float) { //hi
     var c = column + row * r
     var d = "hello"
     b.c.o
     d += c
+    a-c
  }
 
-// a + b
-oper (a matrix) add(b matrix) matrix { 3 }
-
-// b + a
-oper (a matrix) radd(b matrix) matrix { 3 }
-
-
-func sum(a int) int {
-    for a<0 {
-
-    }
-    if a>10 {
-
-    }
-    hi(1, 5, 300)
-    a+s
-    return
+func main() {
+    printf("3 + 2 = %d\n",3+2)
+    printf("3 - 2 = %d\n",3-2)
+    printf("1 / 3 = %d\n",1/3)
+    printf("3 * 2 = %d\n",3*2)
+    printf("3 %% 2 = %d\n",3%2)
 }
+
+//func sum(a int) int {
+//    for a<0 {
+//
+//    }
+//    if a>10 {
+//
+//    }
+//    a+s
+//    return 456
+//}
+
+//oper (a matrix) add(b int) matrix {
+//    return 3
+//}
+//
+//oper (a matrix) radd(b int) matrix { return 3 }
+//
+//oper (a matrix) sub(b matrix) matrix {return 3}
+//
+//oper (a matrix) add(b matrix) matrix {return 3}
+//
+//oper (a matrix) mul(b matrix) matrix {return 3}
+//oper (a matrix) div(b matrix) matrix {return 3}

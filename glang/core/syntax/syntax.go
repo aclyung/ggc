@@ -3,9 +3,6 @@ package syntax
 import (
 	"fmt"
 	"io"
-	"os"
-	"strings"
-	"time"
 )
 
 type Error struct {
@@ -46,63 +43,60 @@ func result(pass bool, time float64) {
 	println(Green + "--- " + res + ": " + fmt.Sprint(time) + "s" + Reset)
 }
 
-func TestParseString(filename string, src string, errh ErrHandler, testTok bool) *File {
-	file++
-	if testTok {
-		TokenizingTest(filename, src)
-	}
-	testPrint("Testing Parsing")
-	start := time.Now()
-	r := strings.NewReader(src)
-	e := Parse(filename, r, errh)
-	took := time.Since(start).Seconds()
-	testPrint("Testing Parsing complete")
-	result(e != nil, took)
-	return e
-}
+//func TestParseString(filename string, src string, errh ErrHandler, testTok bool) *File {
+//	file++
+//	if testTok {
+//		TokenizingTest(filename, src)
+//	}
+//	testPrint("Testing Parsing")
+//	start := time.Now()
+//	r := strings.NewReader(src)
+//	e := Parse(filename, r, errh)
+//	took := time.Since(start).Seconds()
+//	testPrint("Testing Parsing complete")
+//	result(e != nil, took)
+//	return e
+//}
 
-func Parse(filename string, src io.Reader, errh ErrHandler) *File {
-	r := Reset
-	defer func() { Reset = r }()
+func Parse(filename string, src io.Reader, errh ErrHandler, verbose bool) *File {
 	var p parser
+	p.verbose = verbose
 	p.init(src, errh)
 	p.next()
-	Reset = Blue
-	fmt.Println(Blue + "File " + filename + "\n")
 	return p.EOF()
 }
 
-func ParseFile(filename string, errh ErrHandler) *File {
-	f, err := os.Open(filename)
-	if err != nil {
-		errh(err)
-		return nil
-	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			if errh != nil {
-				errh(err)
-			}
-		}
-	}(f)
-	return Parse(filename, f, errh)
-}
-
-func TestParseFile(filename string, errh ErrHandler, t bool) *File {
-	f, err := os.Open(filename)
-	if err != nil {
-		if errh != nil {
-			errh(err)
-		}
-		return nil
-	}
-	b, err := io.ReadAll(f)
-	if err != nil {
-		if errh != nil {
-			errh(err)
-		}
-		return nil
-	}
-	return TestParseString(filename, string(b), errh, t)
-}
+//func ParseFile(filename string, errh ErrHandler) *File {
+//	f, err := os.Open(filename)
+//	if err != nil {
+//		errh(err)
+//		return nil
+//	}
+//	defer func(f *os.File) {
+//		err := f.Close()
+//		if err != nil {
+//			if errh != nil {
+//				errh(err)
+//			}
+//		}
+//	}(f)
+//	return Parse(filename, f, errh)
+//}
+//
+//func TestParseFile(filename string, errh ErrHandler, t bool) *File {
+//	f, err := os.Open(filename)
+//	if err != nil {
+//		if errh != nil {
+//			errh(err)
+//		}
+//		return nil
+//	}
+//	b, err := io.ReadAll(f)
+//	if err != nil {
+//		if errh != nil {
+//			errh(err)
+//		}
+//		return nil
+//	}
+//	return TestParseString(filename, string(b), errh, t)
+//}

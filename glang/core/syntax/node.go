@@ -29,7 +29,7 @@ type (
 	OperDecl struct {
 		Group        *Group
 		TypeL, TypeR *Field
-		Oper         token
+		Oper         Token
 		Return       Expr
 		Body         *BlockStmt
 		decl
@@ -94,7 +94,7 @@ type (
 
 	IncDecStmt struct {
 		X   Expr
-		Tok token
+		Tok Token
 		simpleStmt
 	}
 
@@ -196,9 +196,9 @@ type (
 		Sel *Name
 		expr
 	}
-	// Fun(ArgList[0], ArgList[1], ...)
+	// Func(ArgList[0], ArgList[1], ...)
 	CallExpr struct {
-		Fun     Expr
+		Func    Expr
 		ArgList []Expr // nil means no arguments
 		expr
 	}
@@ -206,7 +206,7 @@ type (
 	Field struct {
 		Name *Name // nil means anonymous field/parameter (structs/parameters), or embedded element (interfaces)
 		Type Expr  // field names declared in a list share the same Type (identical pointers)
-		node
+		expr
 	}
 )
 

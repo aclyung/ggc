@@ -1,6 +1,7 @@
 package buitin
 
 import (
+	"almeng.com/glang/global"
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/constant"
 	"github.com/llir/llvm/ir/types"
@@ -14,7 +15,6 @@ func RegisterFunc(m *ir.Module, f *ir.Func) {
 
 var Funcs = map[string]*ir.Func{
 	"printf": Printf,
-	"print":  Print,
 }
 
 var Printf = func() *ir.Func {
@@ -33,12 +33,16 @@ func _println() *ir.Func {
 	f := ir.NewFunc(
 		"println",
 		types.Void,
-		ir.NewParam("", types.NewPointer(types.I8)),
 	)
+	f.Sig.Variadic = true
 	b := f.NewBlock("")
+	blank := global.NewGlobalString(b, "")
 	var prams []value.Value
 	for _, v := range f.Params {
 		prams = append(prams, v)
+	}
+	if prams == nil {
+		prams = append(prams, blank)
 	}
 	b.NewCall(Printf, prams...)
 	c := b.NewGetElementPtr(NewLine.ContentType, NewLine, constant.NewInt(Int, 0), constant.NewInt(Int, 0))
@@ -47,18 +51,24 @@ func _println() *ir.Func {
 	return f
 }
 
-var Print = func() *ir.Func {
+var Print *ir.Func
+
+func _print() *ir.Func {
 	f := ir.NewFunc(
 		"print",
 		types.Void,
-		ir.NewParam("", types.NewPointer(types.I8)),
 	)
+	f.Sig.Variadic = true
 	b := f.NewBlock("")
+	blank := global.NewGlobalString(b, "")
 	var prams []value.Value
 	for _, v := range f.Params {
 		prams = append(prams, v)
 	}
+	if prams == nil {
+		prams = append(prams, blank)
+	}
 	b.NewCall(Printf, prams...)
 	b.NewRet(nil)
 	return f
-}()
+}
