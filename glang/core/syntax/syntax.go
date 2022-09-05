@@ -58,7 +58,7 @@ func result(pass bool, time float64) {
 //	return e
 //}
 
-func Parse(filename string, src io.Reader, errh ErrHandler, verbose bool) *File {
+func Parse(src io.Reader, errh ErrHandler, verbose bool) *File {
 	var p parser
 	p.verbose = verbose
 	p.init(src, errh)

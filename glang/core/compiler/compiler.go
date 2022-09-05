@@ -1,43 +1,50 @@
 package compiler
 
 import (
-	buitin "almeng.com/glang/core/builtin"
+	"almeng.com/glang/core/builtin"
 	"almeng.com/glang/core/syntax"
 	"almeng.com/glang/global"
-	"fmt"
 	"github.com/almenglee/general"
 	"github.com/llir/llvm/ir"
+	"github.com/llir/llvm/ir/constant"
+	"github.com/llir/llvm/ir/types"
 	"io"
-	"io/ioutil"
 	"os"
-	"os/exec"
 )
 
-var errh = func(err error) { println(err.Error()) }
+var errh = func(err error) { println(err.Error()); os.Exit(-1) }
 
 type Compiler struct {
-	Target  Target
-	Module  *ir.Module
-	Spaces  general.List[*Space]
-	Global  *Space
-	Opers   general.List[*Operator]
-	verbose bool
+	Target       Target
+	Module       *ir.Module
+	Main         *ir.Func
+	Spaces       general.List[*Context]
+	CurrentSpace *Context
+	Global       *Context
+	Opers        general.List[*Operator]
+	verbose      bool
 }
 
-func NewCompiler(t Target, verbose bool) (c Compiler) {
+func NewCompiler(t Target, verbose bool) *Compiler {
 	mod := ir.NewModule()
-	c = Compiler{t, mod, nil, nil, nil, verbose}
-	return
+	return &Compiler{t, mod, nil, nil, nil, NewContext(ir.NewBlock("global")), nil, verbose}
 }
 
 func (c *Compiler) InitGlobal() {
-	c.Global = &Space{
-		Name: &syntax.Name{Value: "#global"},
-		Decl: general.EmptyList[syntax.Decl](),
+	m := c.Module
+	for _, v := range builtin.ITypes {
+		m.NewTypeDef(v.N, v.T)
 	}
-	buitin.InitTypes(c.Global.Decl)
-	buitin.InitConsts(c.Global.Decl)
-	buitin.InitModule(c.Module)
+	for _, v := range builtin.Consts {
+		c.Global.vars[v.Name] = m.NewGlobalDef(v.Name, v.IConst)
+	}
+
+	builtin.NewLine = global.NewGlobalCharArrayConstant("\n")
+	builtin.Println = builtin.InitPrintln()
+	builtin.Print = builtin.InitPrint()
+	for _, v := range builtin.Funcs {
+		builtin.RegisterFunc(m, *v)
+	}
 	c.InitOper()
 }
 
@@ -46,68 +53,41 @@ type Space struct {
 	Decl *general.List[syntax.Decl]
 }
 
-func Compile(filename string, debug bool, verbose bool) {
-	f, _ := os.Open(filename)
+func Compile(filename string, verbose bool, triple string) *Compiler {
+	f, ferr := os.Open(filename)
+	if ferr != nil {
+		println(ferr.Error())
+		os.Exit(-1)
+	}
 	// Node
-	t := NewTarget(AARCH64, APPLE, DARWIN)
-	c := NewCompiler(t, verbose)
+	target := TargetFromTriple(triple)
+	c := NewCompiler(target, verbose)
 	global.Init(c.Module)
 	c.InitGlobal()
 	if c.verbose {
 		var src string
-		f, _ := os.Open(filename)
-		if b, err := io.ReadAll(f); err != nil {
-			panic(err)
+		_file, _err := os.Open(filename)
+		if _err != nil {
+			println(_err.Error())
+			os.Exit(-1)
+		}
+		if b, err := io.ReadAll(_file); err != nil {
+			println(err.Error())
+			os.Exit(-1)
 		} else {
 			src = string(b)
 		}
 		syntax.TokenizingTest(filename, src)
 	}
-	file := syntax.Parse(filename, f, errh, c.verbose)
-	// TODO: Node to llvm IR
+	file := syntax.Parse(f, errh, c.verbose)
+
 	c.CompileFile(file)
-	// TODO: link write file
-	compiled := c.GetIR()
+	entrypoint := c.Module.NewFunc("main", types.I32)
+	block := entrypoint.NewBlock("")
+	block.NewCall(c.Main)
+	block.NewRet(constant.NewInt(types.I32, 0))
 
-	if debug {
-		print("Build result:\n")
-		println(compiled)
-	}
-	tmpDir, err := ioutil.TempDir("", "glang")
-	if err != nil {
-		panic(err)
-	}
-
-	err = ioutil.WriteFile(tmpDir+"/main.ll", []byte(compiled), 0644)
-	if err != nil {
-		panic(err)
-	}
-
-	out, err := os.Getwd()
-	if err != nil {
-		return
-	}
-	outputName := "exec"
-	clangArgs := []string{
-		t.String(),
-		"-Wno-override-module",
-		tmpDir + "/main.ll",
-		"-o", out + "/" + outputName, "-O3",
-	}
-
-	cmd := exec.Command("clang", clangArgs...)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		println(string(output))
-		panic(err)
-	}
-	if len(output) > 0 {
-		fmt.Println(string(output))
-	}
-	if verbose {
-		c.Opers.Each(func(o *Operator) { println(o.Name()) })
-	}
-	return
+	return c
 }
 
 func (c *Compiler) GetIR() string {

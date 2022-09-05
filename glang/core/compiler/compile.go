@@ -40,12 +40,18 @@ func (c *Compiler) CompileFile(f *syntax.File) {
 		Vars  = general.EmptyList[*syntax.VarDecl]()
 		Types = general.EmptyList[*syntax.TypeDecl]()
 	)
+
 	decls.Filter(Filter[*syntax.FuncDecl]()).Each(Append(Funcs))
 	decls.Filter(Filter[*syntax.OperDecl]()).Each(Append(Opers))
 	decls.Filter(Filter[*syntax.VarDecl]()).Each(Append(Vars))
 	decls.Filter(Filter[*syntax.TypeDecl]()).Each(Append(Types))
 
 	space := f.SpaceName.Value
+	if c.CurrentSpace == nil || c.CurrentSpace.Name() != space {
+		ctx := c.Global.NewContext(ir.NewBlock(space))
+		c.CurrentSpace = ctx
+		c.Spaces.Append(ctx)
+	}
 
 	if space == "main" {
 		if Funcs.Filter(func(i int, v *syntax.FuncDecl) bool { return v.Name.Value == "main" }).First() == nil {
@@ -56,9 +62,41 @@ func (c *Compiler) CompileFile(f *syntax.File) {
 	Types.Each(func(v *syntax.TypeDecl) { c.CompileType(space, v) })
 	var FuncDefs = make([]*ir.Func, 0)
 	Funcs.Each(func(v *syntax.FuncDecl) { FuncDefs = append(FuncDefs, c.DefineFunc(space, v)) })
+	//Vars.Each(func(v *syntax.VarDecl) { c.CurrentSpace.vars[v.NameList.Value] = c.Module.new })
 	Opers.Each(func(v *syntax.OperDecl) { c.CompileOper(space, v) })
 	Funcs.Iter(func(i int, v *syntax.FuncDecl) { c.CompileFunc(space, FuncDefs[i], v) })
 	//Types.Each(func(v *syntax.TypeDecl){ c.CompileType(space, v)})
+}
+
+type Context struct {
+	*ir.Block
+	parent *Context
+	vars   map[string]value.Value
+}
+
+func NewContext(b *ir.Block) *Context {
+	return &Context{
+		Block:  b,
+		parent: nil,
+		vars:   make(map[string]value.Value),
+	}
+}
+
+func (c *Context) NewContext(b *ir.Block) *Context {
+	ctx := NewContext(b)
+	ctx.parent = c
+	return ctx
+}
+
+func (c *Context) lookupVariable(name string) value.Value {
+	if v, ok := c.vars[name]; ok {
+		return v
+	} else if c.parent != nil {
+		return c.parent.lookupVariable(name)
+	} else {
+		fmt.Printf("variable: `%s`\n", name)
+		panic("no such variable")
+	}
 }
 
 func RetType(m *ir.Module, name *syntax.Name) types.Type {
@@ -92,12 +130,18 @@ func (c *Compiler) CompileOper(space string, f *syntax.OperDecl) {
 func (c *Compiler) DefineFunc(space string, f *syntax.FuncDecl) *ir.Func {
 	m := c.Module
 	name := f.Name.Value
-	if space != "main" || name != "main" {
-		name = space + ".func." + name
-	}
+	name = space + ".func." + name
 	var ret types.Type
 	ret = c.QueryType(space, f.Return)
-	return m.NewFunc(name, ret)
+	Func := m.NewFunc(name, ret)
+	if Func.Name() == "main.func.main" {
+		if !ret.Equal(types.Void) || f.Param != nil {
+			fmt.Println("main function must have no arguments and no return values")
+			os.Exit(1)
+		}
+		c.Main = Func
+	}
+	return Func
 }
 
 func (c *Compiler) CompileFunc(space string, f *ir.Func, def *syntax.FuncDecl) *ir.Func {
@@ -214,6 +258,7 @@ func (c *Compiler) EvalOperation(p *ir.Block, oper *syntax.Operation) value.Valu
 	}
 	x := c.CompileExpr(p, oper.X)
 	y := c.CompileExpr(p, oper.Y)
+
 	// TODO
 	o := c.QueryOperator(oper.Op, x.Type(), y.Type())
 	return o.Operation(c, p, x, y)
@@ -299,37 +344,6 @@ func (c *Compiler) CompileExpr(p *ir.Block, s syntax.Expr) value.Value {
 
 	}
 	return nil
-}
-
-type Context struct {
-	*ir.Block
-	parent *Context
-	vars   map[string]value.Value
-}
-
-func NewContext(b *ir.Block) *Context {
-	return &Context{
-		Block:  b,
-		parent: nil,
-		vars:   make(map[string]value.Value),
-	}
-}
-
-func (c *Context) NewContext(b *ir.Block) *Context {
-	ctx := NewContext(b)
-	ctx.parent = c
-	return ctx
-}
-
-func (c *Context) lookupVariable(name string) value.Value {
-	if v, ok := c.vars[name]; ok {
-		return v
-	} else if c.parent != nil {
-		return c.parent.lookupVariable(name)
-	} else {
-		fmt.Printf("variable: `%s`\n", name)
-		panic("no such variable")
-	}
 }
 
 func (c *Compiler) CompileStmt(p *ir.Block, s syntax.Stmt) value.Value {

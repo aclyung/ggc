@@ -1,4 +1,4 @@
-package buitin
+package builtin
 
 import "testing"
 import "almeng.com/glang/core/builtin/operators"

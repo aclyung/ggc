@@ -3,6 +3,7 @@ package syntax
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 )
 
@@ -24,7 +25,8 @@ func (p *parser) EOF() *File {
 	f := new(File)
 	f.pos = p.pos()
 	if !p.got(_Space) {
-		p.error("space must be declared first")
+		fmt.Println("expected space, got '" + p.token.String() + "'")
+		os.Exit(-1)
 		return nil
 	}
 	f.SpaceName = p.name()
@@ -37,6 +39,7 @@ func (p *parser) EOF() *File {
 		case _Type:
 			p.next()
 			f.DeclList = p.appendGroup(f.DeclList, p.typeDecl)
+
 		case _Var:
 			p.next()
 			f.DeclList = p.appendGroup(f.DeclList, p.varDecl)
@@ -44,15 +47,14 @@ func (p *parser) EOF() *File {
 		case _Func:
 			p.next()
 			f.DeclList = p.appendGroup(f.DeclList, p.funcDeclOrNil)
+
 		case _Oper:
 			p.next()
 			f.DeclList = p.appendGroup(f.DeclList, p.operDecl)
-		//case _Type:
-		//	p.errorAt(p.pos(), "WARNING: declaration statement not implemented yet: "+Red+p.Token.String()+Reset)
-		//	p.next()
-		// Throwing exception here
+
 		case _Semi:
 			p.next()
+
 		default:
 			str := p.token.String()
 			if p.token == _Name {

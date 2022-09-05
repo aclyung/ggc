@@ -1,14 +1,16 @@
 space main
 
 type t int
+//type matrix int
 
 func hi (column int, row int, r float) { //hi
     var c = column + row * r
     var d = "hello"
     b.c.o
     d += c
-    a-c
+
  }
+
 
 func main() {
     printf("3 + 2 = %d\n",3+2)
@@ -18,16 +20,16 @@ func main() {
     printf("3 %% 2 = %d\n",3%2)
 }
 
-//func sum(a int) int {
-//    for a<0 {
-//
-//    }
-//    if a>10 {
-//
-//    }
-//    a+s
-//    return 456
-//}
+func sum(a int) int {
+    for a<0 {
+
+    }
+    if a>10 {
+
+    }
+    a+s
+    return 456
+}
 
 //oper (a matrix) add(b int) matrix {
 //    return 3

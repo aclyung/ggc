@@ -1,4 +1,4 @@
-package buitin
+package builtin
 
 import (
 	"github.com/llir/llvm/ir/constant"

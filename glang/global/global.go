@@ -34,6 +34,7 @@ func NewGlobalString(b *ir.Block, s string) *ir.InstGetElementPtr {
 	cntr += 1
 	str := _mod.NewGlobalDef(n, c)
 	strPtr := b.NewGetElementPtr(str.ContentType, str, constant.NewInt(types.I64, 0), constant.NewInt(types.I64, 0))
+
 	return strPtr
 }
 

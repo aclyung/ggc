@@ -1,4 +1,4 @@
-package buitin
+package builtin
 
 import (
 	"almeng.com/glang/global"
@@ -13,8 +13,10 @@ func RegisterFunc(m *ir.Module, f *ir.Func) {
 	m.Funcs = append(m.Funcs, f)
 }
 
-var Funcs = map[string]*ir.Func{
-	"printf": Printf,
+var Funcs = map[string]**ir.Func{
+	"printf":  &Printf,
+	"println": &Println,
+	"print":   &Print,
 }
 
 var Printf = func() *ir.Func {
@@ -29,7 +31,7 @@ var Printf = func() *ir.Func {
 
 var Println *ir.Func
 
-func _println() *ir.Func {
+func InitPrintln() *ir.Func {
 	f := ir.NewFunc(
 		"println",
 		types.Void,
@@ -53,7 +55,7 @@ func _println() *ir.Func {
 
 var Print *ir.Func
 
-func _print() *ir.Func {
+func InitPrint() *ir.Func {
 	f := ir.NewFunc(
 		"print",
 		types.Void,
