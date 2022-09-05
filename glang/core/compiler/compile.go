@@ -3,7 +3,6 @@ package compiler
 import (
 	buitin "almeng.com/glang/core/builtin"
 	"almeng.com/glang/core/syntax"
-	"almeng.com/glang/global"
 	"fmt"
 	"github.com/almenglee/general"
 	"github.com/llir/llvm/ir"
@@ -303,7 +302,7 @@ func (c *Compiler) CompileExpr(p *ir.Block, s syntax.Expr) value.Value {
 		expr := s.(*syntax.BasicLit)
 		switch expr.Kind {
 		case syntax.StringLit:
-			return global.NewLocalString(p, expr.Value)
+			return c.NewLocalString(p, expr.Value)
 		case syntax.IntLit:
 			v, err := strconv.ParseInt(expr.Value, 10, 64)
 			if err != nil {

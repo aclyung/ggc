@@ -1,11 +1,8 @@
 package builtin
 
 import (
-	"almeng.com/glang/global"
 	"github.com/llir/llvm/ir"
-	"github.com/llir/llvm/ir/constant"
 	"github.com/llir/llvm/ir/types"
-	"github.com/llir/llvm/ir/value"
 )
 
 func RegisterFunc(m *ir.Module, f *ir.Func) {
@@ -30,47 +27,4 @@ var Printf = func() *ir.Func {
 }()
 
 var Println *ir.Func
-
-func InitPrintln() *ir.Func {
-	f := ir.NewFunc(
-		"println",
-		types.Void,
-	)
-	f.Sig.Variadic = true
-	b := f.NewBlock("")
-	blank := global.NewGlobalString(b, "")
-	var prams []value.Value
-	for _, v := range f.Params {
-		prams = append(prams, v)
-	}
-	if prams == nil {
-		prams = append(prams, blank)
-	}
-	b.NewCall(Printf, prams...)
-	c := b.NewGetElementPtr(NewLine.ContentType, NewLine, constant.NewInt(Int, 0), constant.NewInt(Int, 0))
-	b.NewCall(Printf, c)
-	b.NewRet(nil)
-	return f
-}
-
 var Print *ir.Func
-
-func InitPrint() *ir.Func {
-	f := ir.NewFunc(
-		"print",
-		types.Void,
-	)
-	f.Sig.Variadic = true
-	b := f.NewBlock("")
-	blank := global.NewGlobalString(b, "")
-	var prams []value.Value
-	for _, v := range f.Params {
-		prams = append(prams, v)
-	}
-	if prams == nil {
-		prams = append(prams, blank)
-	}
-	b.NewCall(Printf, prams...)
-	b.NewRet(nil)
-	return f
-}

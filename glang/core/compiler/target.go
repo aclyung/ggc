@@ -3,6 +3,7 @@ package compiler
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 )
 
@@ -60,7 +61,12 @@ const (
 
 func TargetFromTriple(t string) Target {
 	if t == "" {
-		return NewTarget(ARM, APPLE, DARWIN)
+		ven := "pc"
+
+		if runtime.GOOS == "darwin" {
+			ven = "apple"
+		}
+		t = runtime.GOARCH + "-" + ven + "-" + runtime.GOOS
 	}
 
 	triple := strings.Split(t, "-")
