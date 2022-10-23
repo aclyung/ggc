@@ -1,0 +1,78 @@
+!META __Text\20dimention
+!META should\20be\20constants
+LABEL __TEXT
+	PUSH string 你好\20世界！\nWitaj\20świecie!\nПриветствую,\20мир!\n
+	STORE 1000
+	PUSH string label\20then\n
+	STORE 2000
+	PUSH string label\20else\n
+	STORE 3000
+	PUSH string bye!\n
+	STORE 4000
+	PUSH string code\20says\20
+	STORE 5000
+	PUSH string hello\20
+	STORE 6000
+	PUSH string world
+	STORE 7000
+	PUSH string !\20😊\n
+	STORE 8000
+	JMP main
+
+!META program_entry
+LABEL main
+	LOAD 1000
+	PRINT
+
+	PUSH i8 999
+	PUSH i8 999
+	CMP EQ
+	NOT
+	NOT
+	BR then else
+
+LABEL then
+	LOAD 2000
+	PRINT
+	CALL func.foo
+	CALL func.foo
+	CALL func.foo
+	CALL func.foo
+	JMP escape
+
+LABEL else
+	LOAD 3000
+	PRINT
+
+
+LABEL escape
+	LOAD 4000
+	PRINT
+
+	EOF
+
+LABEL func.add_string_and_print
+	STORE 0
+	STORE 10
+
+	LOAD 10
+	LOAD 0
+
+	ADD
+	PRINT
+
+	RET
+
+LABEL func.foo
+	LOAD 5000
+	LOAD 6000
+	CALL func.add_string_and_print
+
+	LOAD 7000
+	LOAD 8000
+	CALL func.add_string_and_print
+
+	RET
+
+EOF
+EOF

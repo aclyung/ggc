@@ -251,11 +251,11 @@ func (l *lexer) next() {
 			l.token = _Operator
 			break
 		}
-		if l.ch == '<' {
-			l.nextch()
-			l.op, l.prec = Shl, precMul
-			goto assignoper
-		}
+		//if l.ch == '<' {
+		//	l.nextch()
+		//	l.op, l.prec = Shl, precMul
+		//	goto assignoper
+		//}
 		l.op, l.prec = Lss, precCmp
 		l.token = _Operator
 
@@ -267,11 +267,11 @@ func (l *lexer) next() {
 			l.token = _Operator
 			break
 		}
-		if l.ch == '>' {
-			l.nextch()
-			l.op, l.prec = Shr, precMul
-			goto assignoper
-		}
+		//if l.ch == '>' {
+		//	l.nextch()
+		//	l.op, l.prec = Shr, precMul
+		//	goto assignoper
+		//}
 		l.op, l.prec = Gtr, precCmp
 		l.token = _Operator
 

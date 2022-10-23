@@ -1,7 +1,7 @@
 package compiler
 
 import (
-	buitin "almeng.com/glang/core/builtin"
+	"almeng.com/glang/core/builtin"
 	"almeng.com/glang/core/syntax"
 	"fmt"
 	"github.com/almenglee/general"
@@ -59,9 +59,9 @@ func (c *Compiler) CompileFile(f *syntax.File) {
 		}
 	}
 	Types.Each(func(v *syntax.TypeDecl) { c.CompileType(space, v) })
-	var FuncDefs = make([]*ir.Func, 0)
+	var FuncDefs = make([]*Context, 0)
 	Funcs.Each(func(v *syntax.FuncDecl) { FuncDefs = append(FuncDefs, c.DefineFunc(space, v)) })
-	//Vars.Each(func(v *syntax.VarDecl) { c.CurrentSpace.vars[v.NameList.Value] = c.Module.new })
+	//Vars.Each(func(v *syntax.VarDecl) { c.CurrentSpace.vars[v.NameList.Value] = c.compileVar() })
 	Opers.Each(func(v *syntax.OperDecl) { c.CompileOper(space, v) })
 	Funcs.Iter(func(i int, v *syntax.FuncDecl) { c.CompileFunc(space, FuncDefs[i], v) })
 	//Types.Each(func(v *syntax.TypeDecl){ c.CompileType(space, v)})
@@ -71,6 +71,7 @@ type Context struct {
 	*ir.Block
 	parent *Context
 	vars   map[string]value.Value
+	leave  *ir.Block
 }
 
 func NewContext(b *ir.Block) *Context {
@@ -78,6 +79,7 @@ func NewContext(b *ir.Block) *Context {
 		Block:  b,
 		parent: nil,
 		vars:   make(map[string]value.Value),
+		leave:  nil,
 	}
 }
 
@@ -98,6 +100,15 @@ func (c *Context) lookupVariable(name string) value.Value {
 	}
 }
 
+func (c *Context) localize(v value.Value) value.Value {
+	switch v.(type) {
+	case *ir.Global:
+		r := v.(*ir.Global)
+		return c.NewLoad(r.Typ.ElemType, r)
+	}
+	return v
+}
+
 func RetType(m *ir.Module, name *syntax.Name) types.Type {
 	t := general.AsList(m.TypeDefs).Filter(func(i int, e types.Type) bool {
 		return e.Name() == name.Value
@@ -108,66 +119,61 @@ func RetType(m *ir.Module, name *syntax.Name) types.Type {
 	return nil
 }
 
-func OperName(operator syntax.Token, L types.Type, R types.Type) (name string) {
-	name = "oper."
-	nameL, nameR := "_"+L.Name(), "_"+R.Name()
-	if operator.IsReversedOper() {
-		name += (operator - (syntax.Reversed_oper - syntax.Operator_beg)).String() + "."
-		name += nameR + nameL
-	} else {
-		name += operator.String() + "."
-		name += nameL + nameR
-	}
-	return
-}
-
 func (c *Compiler) CompileOper(space string, f *syntax.OperDecl) {
 	r, l := c.QueryType(space, f.TypeR), c.QueryType(space, f.TypeL)
-	c.Opers.Append(NewOperator(f.Oper, l, r, f.Body))
+	rtn := c.QueryType(space, f.Return)
+	if f.Oper.IsReversedOper() {
+		r, l = l, r
+		f.Oper = f.Oper - (syntax.Reversed_oper - syntax.Operator_beg)
+	}
+	c.Opers.Append(NewOperator(f, l, r, rtn))
 }
 
-func (c *Compiler) DefineFunc(space string, f *syntax.FuncDecl) *ir.Func {
+func (c *Compiler) DefineFunc(space string, f *syntax.FuncDecl) *Context {
 	m := c.Module
 	name := f.Name.Value
 	name = space + ".func." + name
 	var ret types.Type
 	ret = c.QueryType(space, f.Return)
-	Func := m.NewFunc(name, ret)
+	Params := make([]*ir.Param, 0)
+	general.AsList(f.Param).Each(func(v *syntax.Field) {
+		Params = append(Params, ir.NewParam(v.Name.Value, c.QueryType(space, v.Type)))
+	})
+	Func := m.NewFunc(name, ret, Params...)
 	if Func.Name() == "main.func.main" {
 		if !ret.Equal(types.Void) || f.Param != nil {
 			fmt.Println("main function must have no arguments and no return values")
 			os.Exit(1)
+
 		}
 		c.Main = Func
 	}
-	return Func
+	block := Func.NewBlock(Func.Name() + ".body")
+	ctx := c.CurrentSpace.NewContext(block)
+	general.AsList(Params).Each(func(v *ir.Param) {
+		ctx.vars[v.Name()] = v
+	})
+	return ctx
 }
 
-func (c *Compiler) CompileFunc(space string, f *ir.Func, def *syntax.FuncDecl) *ir.Func {
-	var ret types.Type
-	ret = c.QueryType(space, def.Return)
-	Func := f
+func (c *Compiler) CompileFunc(space string, ctx *Context, def *syntax.FuncDecl) *ir.Func {
 	last, ok := def.Body.StmtList[len(def.Body.StmtList)-1].(*syntax.ReturnStmt)
 	if !ok {
 		last = &syntax.ReturnStmt{Return: nil}
 		def.Body.StmtList = append(def.Body.StmtList, last)
 	}
 
-	rtn := c.CompileExpr(ir.NewBlock(""), last.Return)
-	var type_return types.Type = buitin.Void
-	if rtn != nil {
-		type_return = rtn.Type()
-	}
-	if !ret.Equal(type_return) {
-		tName := type_return.String()
-		if type_return == buitin.Void {
-			tName = "nil"
-		}
-		println("expected return type " + ret.Name() + " but got " + tName)
+	c.CompileBody(ctx, def.Body, false, nil)
+
+	ret := ctx.Block.Parent.Sig.RetType
+
+	got := c.QueryType(space, def.Return)
+	if !ret.Equal(got) {
+		println("expected return type " + ret.Name() + " but got " + got.Name())
 		os.Exit(1)
 	}
-	c.CompileBody(Func, def.Body)
-	return Func
+
+	return ctx.Block.Parent
 }
 
 func DefType[T interface {
@@ -221,7 +227,7 @@ func _qName(space string, t syntax.Expr) Query {
 
 func (c *Compiler) QueryType(space string, t syntax.Expr) types.Type {
 	if t == nil {
-		return buitin.Void
+		return builtin.Void
 	}
 	name := ""
 	q := _qName(space, t)
@@ -242,51 +248,72 @@ func (c *Compiler) QueryType(space string, t syntax.Expr) types.Type {
 
 var str *ir.InstGetElementPtr
 
-func (c *Compiler) CompileBody(p *ir.Func, body *syntax.BlockStmt) *ir.Block {
-	b := p.NewBlock("")
+func (c *Compiler) CompileBody(ctx *Context, body *syntax.BlockStmt, inline bool, inlineRtn *value.Value) *Context {
 	for _, v := range body.StmtList {
-		c.CompileStmt(b, v)
+		c.CompileStmt(ctx, v, inline, inlineRtn)
 	}
-	return b
+	return ctx
 }
 
-func (c *Compiler) EvalOperation(p *ir.Block, oper *syntax.Operation) value.Value {
+func (c *Compiler) EvalOperation(ctx *Context, oper *syntax.Operation) value.Value {
 	if oper.Y == nil {
-		return c.EvalUnary(oper.Op, oper.X)
+		return c.EvalUnary(ctx, oper)
 
 	}
-	x := c.CompileExpr(p, oper.X)
-	y := c.CompileExpr(p, oper.Y)
+	x := c.CompileExpr(ctx, oper.X)
+	y := c.CompileExpr(ctx, oper.Y)
+
+	swaped := false
+	op := oper.Op
+	switch oper.Op {
+	case syntax.Lss, syntax.Leq:
+		x, y = y, x
+		oper.Op += 2
+		swaped = true
+	}
+
+	if oper.Op == syntax.Geq {
+
+	}
 
 	// TODO
-	o := c.QueryOperator(oper.Op, x.Type(), y.Type())
-	return o.Operation(c, p, x, y)
+	operation := c.QueryOperator(oper.Op, x.Type(), y.Type())
+	if operation == nil {
+		errStr := x.Type().Name() + " and " + y.Type().Name()
+		if swaped {
+			errStr = y.Type().Name() + " and " + x.Type().Name()
+		}
+		if x.Type().Equal(y.Type()) {
+			errStr = x.Type().Name()
+		}
+
+		fmt.Println(oper.Pos().String() + " Invalid Operation: the operator " + op.String() + " is not defined for " + errStr)
+		os.Exit(1)
+	}
+	return operation.Operation(c, ctx, x, y)
 
 }
 
-func (c *Compiler) EvalUnary(op syntax.Operator, x syntax.Expr) value.Value {
-	return nil
+func (c *Compiler) EvalUnary(ctx *Context, op *syntax.Operation) value.Value {
+	x := c.CompileExpr(ctx, op.X)
+	oper := c.QueryOperator(op.Op, x.Type(), nil)
+	if oper == nil {
+		fmt.Println(op.Pos().String() + " Invalid Operation: the operator " + op.Op.String() + " is not defined for " + x.Type().Name())
+		os.Exit(1)
+	}
+	return oper.Operation(c, ctx, x, nil)
 }
 func (c *Compiler) QueryOperator(oper syntax.Operator, L, R types.Type) *Operator {
-	var op syntax.Token
-	switch oper {
-	case syntax.Add:
-		op = syntax.OperAdd
-	case syntax.Sub:
-		op = syntax.OperSub
-	case syntax.Mul:
-		op = syntax.OperMul
-	case syntax.Div:
-		op = syntax.OperDiv
-	case syntax.Rem:
-		op = syntax.OperRem
-	default:
-		op = syntax.OperAdd
+	op := c.Opers.Filter(func(i int, v *Operator) bool {
+		return v.Op == oper && v.TypeL.Equal(L) && (R == nil || v.TypeR.Equal(R))
+	}).First()
+	if op != nil {
+		return *op
 	}
-	return *c.Opers.Filter(func(i int, v *Operator) bool { return v.Name() == OperName(op, L, R) }).First()
+	return nil
 }
 
-func (c *Compiler) CompileExpr(p *ir.Block, s syntax.Expr) value.Value {
+func (c *Compiler) CompileExpr(ctx *Context, s syntax.Expr) value.Value {
 	// TODO
 	switch s.(type) {
 	case *syntax.BadExpr:
@@ -295,14 +322,19 @@ func (c *Compiler) CompileExpr(p *ir.Block, s syntax.Expr) value.Value {
 
 	case *syntax.Name:
 		expr := s.(*syntax.Name)
-		_ = expr
-		return constant.NewInt(types.I64, 1)
+		_var := ctx.lookupVariable(expr.Value)
+		switch _var.(type) {
+		case *ir.Global:
+			v := _var.(*ir.Global)
+			return ctx.NewLoad(v.Typ.ElemType, v)
+		}
+		return _var
 
 	case *syntax.BasicLit:
 		expr := s.(*syntax.BasicLit)
 		switch expr.Kind {
 		case syntax.StringLit:
-			return c.NewLocalString(p, expr.Value)
+			return c.NewGlobalString(ctx.Block, expr.Value)
 		case syntax.IntLit:
 			v, err := strconv.ParseInt(expr.Value, 10, 64)
 			if err != nil {
@@ -314,12 +346,12 @@ func (c *Compiler) CompileExpr(p *ir.Block, s syntax.Expr) value.Value {
 			if err != nil {
 				panic("wrong value")
 			}
-			return constant.NewFloat(buitin.Float, v)
+			return constant.NewFloat(builtin.Float, v)
 		}
 
 	case *syntax.Operation:
 		expr := s.(*syntax.Operation)
-		return c.EvalOperation(p, expr)
+		return c.EvalOperation(ctx, expr)
 
 	case *syntax.ParenExpr:
 		expr := s.(*syntax.ParenExpr)
@@ -334,8 +366,8 @@ func (c *Compiler) CompileExpr(p *ir.Block, s syntax.Expr) value.Value {
 		name := expr.Func.(*syntax.Name).Value
 		callee := *(general.AsList(c.Module.Funcs).Filter(func(i int, v *ir.Func) bool { return v.Name() == name }).First())
 		var args []value.Value
-		general.AsList(expr.ArgList).Each(func(v syntax.Expr) { args = append(args, c.CompileExpr(p, v)) })
-		p.NewCall(callee, args...)
+		general.AsList(expr.ArgList).Each(func(v syntax.Expr) { args = append(args, c.CompileExpr(ctx, v)) })
+		ctx.NewCall(callee, args...)
 
 	case *syntax.Field:
 		expr := s.(*syntax.Field)
@@ -345,11 +377,11 @@ func (c *Compiler) CompileExpr(p *ir.Block, s syntax.Expr) value.Value {
 	return nil
 }
 
-func (c *Compiler) CompileStmt(p *ir.Block, s syntax.Stmt) value.Value {
+func (c *Compiler) CompileStmt(ctx *Context, s syntax.Stmt, inline bool, inlineRtn *value.Value) value.Value {
 	switch s.(type) {
 	case *syntax.ExprStmt:
 		stmt := s.(*syntax.ExprStmt)
-		return c.CompileExpr(p, stmt.X)
+		return c.CompileExpr(ctx, stmt.X)
 	case *syntax.EmptyStmt:
 		return nil
 	case *syntax.IncDecStmt:
@@ -359,15 +391,22 @@ func (c *Compiler) CompileStmt(p *ir.Block, s syntax.Stmt) value.Value {
 	case *syntax.ContinueStmt:
 		stmt := s.(*syntax.ContinueStmt)
 		_ = stmt
+	//case *syntax.WhileStmt:
+	//	stmt := s.(*syntax.WhileStmt)
+	//	c.CompileWhile(ctx, stmt)
 
 	case *syntax.BreakStmt:
-		stmt := s.(*syntax.BreakStmt)
-		_ = stmt
+		ctx.NewBr(ctx.parent.Block)
 
 	case *syntax.ReturnStmt:
 		stmt := s.(*syntax.ReturnStmt)
-		p.NewRet(c.CompileExpr(p, stmt.Return))
-		//ir.NewRet()
+		if inline {
+			rtn := c.CompileExpr(ctx, stmt.Return)
+			str := ctx.NewStore(rtn, *inlineRtn)
+			return ctx.NewLoad(rtn.Type(), str.Dst)
+		}
+		return ctx.Block.NewRet(c.CompileExpr(ctx, stmt.Return)).X
+
 	case *syntax.DeclStmt:
 		stmt := s.(*syntax.DeclStmt)
 		_ = stmt
@@ -377,17 +416,80 @@ func (c *Compiler) CompileStmt(p *ir.Block, s syntax.Stmt) value.Value {
 		_ = stmt
 
 	case *syntax.IfStmt:
-		//stmt := s.(*syntax.IfStmt)
-		//c.CompileIf()
+		stmt := s.(*syntax.IfStmt)
+		c.CompileIf(ctx, stmt, inline, inlineRtn)
 
-	case *syntax.ForStmt:
-		stmt := s.(*syntax.ForStmt)
-		_init, _cond, _post := stmt.Init, stmt.Cond, stmt.Post
-		_, _, _ = _init, _cond, _post
+	//case *syntax.ForStmt:
+	//	stmt := s.(*syntax.ForStmt)
+	//	c.CompileFor(ctx, stmt)
 
 	case *syntax.BlockStmt:
 		stmt := s.(*syntax.BlockStmt)
-		c.CompileBody(p.Parent, stmt)
+		c.CompileBody(ctx, stmt, inline, inlineRtn)
 	}
 	return nil
 }
+
+var (
+	ifCntr    = 0
+	forCntr   = 0
+	whileCntr = 0
+)
+
+func (c *Compiler) CompileIf(ctx *Context, stmt *syntax.IfStmt, inline bool, inlineRtn *value.Value) {
+	f := ctx.Block.Parent
+	_cntr := ifCntr
+	ifCntr++
+	thenCtx := ctx.NewContext(f.NewBlock("if.then." + strconv.Itoa(_cntr)))
+	block := thenCtx.Block
+	c.CompileStmt(thenCtx, stmt.Block, inline, inlineRtn)
+	elseB := f.NewBlock("if.else." + strconv.Itoa(_cntr))
+	c.CompileStmt(ctx.NewContext(elseB), stmt.Else, inline, inlineRtn)
+	//ctx.NewCondBr(constant.NewInt(builtin.Bool, 0), thenCtx.Block, elseB)
+	ctx.NewCondBr(c.CompileExpr(ctx, stmt.Cond), block, elseB)
+	var leaveB *ir.Block
+
+	if thenCtx.Block.Term == nil {
+		leaveB = f.NewBlock("leave.if." + strconv.Itoa(_cntr))
+		thenCtx.NewBr(leaveB)
+		ctx.Block = leaveB
+	} else if inline {
+		thenCtx.NewBr(ctx.leave)
+	}
+	//if elseB.Term == nil {
+	//	if leaveB == nil {
+	//		leaveB = f.NewBlock("leave.if." + strconv.Itoa(_cntr))
+	//	}
+	//	elseB.NewBr(leaveB)
+	//	ctx.Block = leaveB
+	//}
+	ifCntr++
+}
+
+//func (c *Compiler) CompileFor(ctx *Context, stmt *syntax.ForStmt) {
+//	f := ctx.Block.Parent
+//	loopCtx := ctx.NewContext(f.NewBlock("for.loop.body"))
+//	ctx.NewBr(loopCtx.Block)
+//	firstAppear := loopCtx.NewPhi(ir.NewIncoming(c.CompileStmt(loopCtx, stmt.Init), ctx.Block))
+//	loopCtx.vars[stmt.Init.Pos().String()] = firstAppear
+//	step := c.CompileStmt(loopCtx, stmt.Post)
+//	firstAppear.Incs = append(firstAppear.Incs, ir.NewIncoming(step, loopCtx.Block))
+//	loopCtx.vars[stmt.Init.Pos().String()] = step
+//	leaveB := f.NewBlock("leave.for.loop")
+//	loopCtx.Block = leaveB
+//	c.CompileStmt(loopCtx, stmt.Body)
+//	loopCtx.NewCondBr(c.CompileExpr(loopCtx, stmt.Cond), loopCtx.Block, leaveB)
+//}
+
+//func (c *Compiler) CompileWhile(ctx *Context, stmt *syntax.WhileStmt) {
+//	f := ctx.Block.Parent
+//	loopCtx := ctx.NewContext(f.NewBlock("while.loop.body"))
+//	ctx.NewBr(loopCtx.Block)
+//	leaveB := f.NewBlock("leave.while.loop")
+//	ctx.Block = leaveB
+//	c.CompileStmt(loopCtx, stmt.Body)
+//	if loopCtx.Block.Term != nil {
+//		return
+//	}
+//	loopCtx.NewCondBr(c.CompileExpr(loopCtx, stmt.Cond), loopCtx.Block, leaveB)
+//}

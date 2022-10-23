@@ -8,7 +8,6 @@ import (
 	"github.com/llir/llvm/ir"
 	"github.com/llir/llvm/ir/constant"
 	"github.com/llir/llvm/ir/types"
-	"github.com/llir/llvm/ir/value"
 	"io"
 	"os"
 )
@@ -62,7 +61,7 @@ func (c *Compiler) NewLocalString(b *ir.Block, s string) *ir.InstGetElementPtr {
 func (c *Compiler) InitGlobal() {
 	m := c.Module
 	for _, v := range builtin.ITypes {
-		m.NewTypeDef(v.N, v.T)
+		m.NewTypeDef(v.Name(), v)
 	}
 	for _, v := range builtin.Consts {
 		c.Global.vars[v.Name] = m.NewGlobalDef(v.Name, v.IConst)
@@ -122,20 +121,35 @@ func (c *Compiler) InitPrintln() *ir.Func {
 	f := ir.NewFunc(
 		"println",
 		types.Void,
+		//ir.NewParam("str", types.I8Ptr),
 	)
 	f.Sig.Variadic = true
 	b := f.NewBlock("")
-	blank := c.NewGlobalString(b, "")
-	var prams []value.Value
-	for _, v := range f.Params {
-		prams = append(prams, v)
-	}
-	if prams == nil {
-		prams = append(prams, blank)
-	}
-	b.NewCall(builtin.Printf, prams...)
-	con := b.NewGetElementPtr(builtin.NewLine.ContentType, builtin.NewLine, constant.NewInt(builtin.Int, 0), constant.NewInt(builtin.Int, 0))
-	b.NewCall(builtin.Printf, con)
+	args := b.NewAlloca(types.NewArray(1, builtin.VAList))
+	args.Align = 16
+	ptr := b.NewGetElementPtr(args.ElemType, args, constant.NewInt(types.I32, 0), constant.NewInt(types.I32, 0))
+	ptr.InBounds = true
+	p := b.NewBitCast(ptr, types.I8Ptr)
+	b.NewCall(builtin.VaStart, p)
+	b.NewCall(builtin.Printf, c.NewGlobalString(b, "%d\n"), args)
+	num := b.NewVAArg(args, types.I8)
+	num = b.NewVAArg(args, types.I8)
+	b.NewCall(builtin.Printf, c.NewGlobalString(b, "%d\n"), num)
+	list_ptr := b.NewGetElementPtr(args.ElemType, args, constant.NewInt(types.I32, 0), constant.NewInt(types.I32, 0))
+	list_ptr.InBounds = true
+
+	println(list_ptr.Type().String())
+	va := b.NewGetElementPtr(builtin.VAList, list_ptr, constant.NewInt(types.I32, 0), constant.NewInt(types.I32, 0))
+	va.InBounds = true
+	a := b.NewLoad(types.I8Ptr, va)
+	n := b.NewBitCast(a, types.NewPointer(types.I8Ptr))
+	l := b.NewLoad(types.I8Ptr, n)
+
+	b.NewCall(builtin.Printf, l)
+	b.NewCall(builtin.VaEnd, p)
+	b.NewCall(builtin.Printf, c.NewGlobalString(b, "%d\n"), p)
+	nl := b.NewGetElementPtr(builtin.NewLine.ContentType, builtin.NewLine, constant.NewInt(builtin.Int, 0), constant.NewInt(builtin.Int, 0))
+	b.NewCall(builtin.Printf, nl)
 	b.NewRet(nil)
 	return f
 }
@@ -144,18 +158,27 @@ func (c *Compiler) InitPrint() *ir.Func {
 	f := ir.NewFunc(
 		"print",
 		types.Void,
+		//ir.NewParam("str", types.I8Ptr),
 	)
 	f.Sig.Variadic = true
 	b := f.NewBlock("")
-	blank := c.NewGlobalString(b, "")
-	var prams []value.Value
-	for _, v := range f.Params {
-		prams = append(prams, v)
-	}
-	if prams == nil {
-		prams = append(prams, blank)
-	}
-	b.NewCall(builtin.Printf, prams...)
+	args := b.NewAlloca(types.NewArray(1, builtin.VAList))
+	args.Align = 16
+	ptr := b.NewGetElementPtr(args.ElemType, args, constant.NewInt(types.I32, 0), constant.NewInt(types.I32, 0))
+	ptr.InBounds = true
+	p := b.NewBitCast(ptr, types.I8Ptr)
+	b.NewCall(builtin.VaStart, p)
+	list_ptr := b.NewGetElementPtr(args.ElemType, args, constant.NewInt(types.I32, 0), constant.NewInt(types.I32, 0))
+	list_ptr.InBounds = true
+	println(list_ptr.Type().String())
+	va := b.NewGetElementPtr(builtin.VAList, list_ptr, constant.NewInt(types.I32, 0), constant.NewInt(types.I32, 0))
+	va.InBounds = true
+	//b.NewCall(builtin.VaEnd, p)
+	a := b.NewLoad(types.I8Ptr, va)
+	n := b.NewBitCast(a, types.NewPointer(types.I8Ptr))
+	l := b.NewLoad(types.I8Ptr, n)
+	b.NewCall(builtin.VaEnd, p)
+	b.NewCall(builtin.Printf, l)
 	b.NewRet(nil)
 	return f
 }

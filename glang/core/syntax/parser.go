@@ -488,6 +488,9 @@ func (p *parser) stmtOrNil() Stmt {
 		return p.simpleStmt(nil, 0)
 	case _For:
 		return p.forStmt()
+	case _While:
+		p.next()
+		return p.whileStmt()
 	case _If:
 		return p.ifStmt()
 	case _Return:
@@ -497,6 +500,11 @@ func (p *parser) stmtOrNil() Stmt {
 		if p.token != _Semi && p.token != _Rbrace {
 			s.Return = p.expr()
 		}
+		return s
+	case _Break:
+		s := new(BreakStmt)
+		s.pos = p.pos()
+		p.next()
 		return s
 	case _Semi:
 		func() { defer p.trace("empty stmt")() }()
@@ -532,6 +540,7 @@ func (p *parser) binaryExpr(prec int) Expr {
 		p.next()
 		t.X = x
 		t.Y = p.binaryExpr(tprec)
+
 		x = t
 	}
 	return x
@@ -545,7 +554,7 @@ func (p *parser) unaryExpr() Expr {
 	switch p.token {
 	case _Operator:
 		switch p.op {
-		case Mul, Add, Sub, Not, Xor:
+		case Mul, Add, Sub, Not: //, Xor:
 			x := new(Operation)
 			x.pos = p.pos()
 			x.Op = p.op
@@ -553,15 +562,15 @@ func (p *parser) unaryExpr() Expr {
 			x.X = p.unaryExpr()
 			return x
 
-		case And:
-			x := new(Operation)
-			x.pos = p.pos()
-			x.Op = And
-			p.next()
-			// unaryExpr may have returned a parenthesized composite gotLiteral
-			// (see comment in operand) - remove parentheses if any
-			x.X = unparen(p.unaryExpr())
-			return x
+			//case And:
+			//	x := new(Operation)
+			//	x.pos = p.pos()
+			//	x.Op = And
+			//	p.next()
+			//	// unaryExpr may have returned a parenthesized composite gotLiteral
+			//	// (see comment in operand) - remove parentheses if any
+			//	x.X = unparen(p.unaryExpr())
+			//	return x
 		}
 	}
 	return p.pexpr()
@@ -884,6 +893,17 @@ func (p *parser) ifStmt() *IfStmt {
 			p.syntaxError("else must be followed by if or statement block")
 		}
 	}
+	return s
+}
+
+func (p *parser) whileStmt() Stmt {
+	if p.verbose {
+		defer p.trace("whileStmt")()
+	}
+	s := new(WhileStmt)
+	s.pos = p.pos()
+	s.Cond = p.expr()
+	s.Body = p.blockStmt("While clause")
 	return s
 }
 

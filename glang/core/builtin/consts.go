@@ -11,6 +11,11 @@ type _const struct {
 }
 
 var Consts = []_const{
-	_const{"true", "bool", constant.NewInt(Bool, 1)},
-	{"false", "bool", constant.NewInt(Bool, 0)},
+	True,
+	False,
 }
+
+var (
+	True  = _const{"true", "bool", constant.NewInt(Bool, 1)}
+	False = _const{"false", "bool", constant.NewInt(Bool, 0)}
+)

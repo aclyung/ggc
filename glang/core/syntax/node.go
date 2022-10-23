@@ -138,6 +138,12 @@ type (
 		stmt
 	}
 
+	WhileStmt struct {
+		Cond Expr
+		Body *BlockStmt
+		stmt
+	}
+
 	simpleStmt struct {
 		stmt
 	}

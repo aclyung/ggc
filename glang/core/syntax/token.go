@@ -35,6 +35,7 @@ const (
 
 	// keywords
 	keyword_beg
+	_Import // import
 	_If     // if
 	_Else   // else
 	_Space  // space
@@ -45,40 +46,41 @@ const (
 	_Func   // func
 	_Return // return
 	_For    // for
+	_While  // while
 	_Break  // break
 	Operator_beg
-	OperAdd // add
-	OperSub // sub
-	OperMul // mul
-	OperDiv // div
-	OperRem
+	OperNot       // !
+	OperAdd       // add
+	OperSub       // sub
+	OperMul       // mul
+	OperDiv       // div
+	OperRem       // rem
+	OperEql       // eql
+	OperGtr       // gtr
 	Reversed_oper // rem
 	OperRAdd      // radd
 	OperRSub      // rsub
 	OperRMul      // rmul
 	OperRDiv      // rdiv
 	OperRRem      // rrem
+	OperREql      // reql
+	OperRGtr      // rgtr
 	Operator_end
 	keyword_end
 )
 
 //	// keywords
-//	_Break       // break
 //	_Case        // case
 //	_Chan        // chan
 //	_Const       // const
 //	_Continue    // continue
 //	_Default     // default
 //	_Defer       // defer
-//	_Else        // else
 //	_Fallthrough // fallthrough
-//	_For         // for
 //	_Go          // go
-//	_Goto        // goto\
-//	_Import      // import
+//	_Goto        // goto
 //	_Interface   // interface
 //	_Map         // map
-//	_Package     // package
 //	_Range       // range
 //	_Select      // select
 //	_Struct      // struct
@@ -124,6 +126,7 @@ var tokenString = map[Token]string{
 	_Var:     "var",
 	_Const:   "const",
 	_Type:    "type",
+	_Import:  "import",
 	_If:      "if",
 	_Else:    "else",
 	_Space:   "space",
@@ -131,17 +134,23 @@ var tokenString = map[Token]string{
 	_Func:    "func",
 	_Return:  "return",
 	_For:     "for",
+	_While:   "while",
 	_Break:   "break",
+	OperNot:  "not",
 	OperAdd:  "add",
 	OperSub:  "sub",
 	OperMul:  "mul",
 	OperDiv:  "div",
+	OperEql:  "eql",
+	OperGtr:  "gtr",
 	OperRem:  "rem",
 	OperRAdd: "radd",
 	OperRSub: "rsub",
 	OperRMul: "rmul",
 	OperRDiv: "rdiv",
 	OperRRem: "rrem",
+	OperREql: "reql",
+	OperRGtr: "rgtr",
 }
 
 var keywordToken map[Token]string
@@ -176,6 +185,26 @@ const (
 	StringLit
 )
 
+func (t Token) OperTokenToOperator() Operator {
+	switch t {
+	case OperEql:
+		return Eql // ==
+	case OperGtr:
+		return Gtr // >
+	case OperAdd:
+		return Add // +
+	case OperSub:
+		return Sub // -
+	case OperMul:
+		return Mul // *
+	case OperDiv:
+		return Div // /
+	case OperRem:
+		return Rem // %
+	}
+	return 0
+}
+
 type Operator int
 
 const (
@@ -202,17 +231,17 @@ const (
 	// precAdd
 	Add // +
 	Sub // -
-	Or  // |
-	Xor // ^
+	//Or  // |
+	//Xor // ^
 
 	// precMul
-	Mul    // *
-	Div    // /
-	Rem    // %
-	And    // &
-	AndNot // &^
-	Shl    // <<
-	Shr    // >>
+	Mul // *
+	Div // /
+	Rem // %
+	//And    // &
+	//AndNot // &^
+	//Shl    // <<
+	//Shr    // >>
 )
 
 var _op = [...]string{
@@ -228,15 +257,15 @@ var _op = [...]string{
 	Geq:    ">=",
 	Add:    "+",
 	Sub:    "-",
-	Or:     "|",
-	Xor:    "^",
-	Mul:    "*",
-	Div:    "/",
-	Rem:    "%",
-	And:    "&",
-	AndNot: "&^",
-	Shl:    "<<",
-	Shr:    ">>",
+	//Or:     "|",
+	//Xor:    "^",
+	//Mul:    "*",
+	//Div:    "/",
+	Rem: "%",
+	//And:    "&",
+	//AndNot: "&^",
+	//Shl:    "<<",
+	//Shr:    ">>",
 }
 
 func (o Operator) String() string {
