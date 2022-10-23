@@ -1,7 +1,7 @@
-package backend
+package ir
 
 import (
-	"almeng.com/glang/core/compiler/backend/types"
+	"almeng.com/glang/core/ir/types"
 	"fmt"
 	"strconv"
 	"strings"

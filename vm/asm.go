@@ -75,7 +75,7 @@ func (a *Assembler) SetJump() {
 
 func (a *Assembler) GenBC() []byte {
 	for !a.isEOF() {
-		if inst, ok := words[a.Next()]; ok {
+		if inst, ok := Words[a.Next()]; ok {
 			switch inst {
 			case META:
 				a.PutInst(inst)
@@ -102,7 +102,7 @@ func (a *Assembler) GenBC() []byte {
 				continue
 			case CMP:
 				a.PutInst(inst)
-				a.Put(Uint16ToBytes(uint16(words[a.Next()]))...)
+				a.Put(Uint16ToBytes(uint16(Words[a.Next()]))...)
 				continue
 			case LOAD, STORE:
 				a.PutInst(inst)

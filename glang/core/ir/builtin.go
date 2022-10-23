@@ -1,4 +1,4 @@
-package backend
+package ir
 
 //var BuiltinFuncs = map[string]*Func{
 //	"print": NewFunc("print", nil, types.String),

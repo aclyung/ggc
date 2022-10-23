@@ -4,9 +4,6 @@ package vm
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/inhies/go-bytesize"
-	"io"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -44,7 +41,7 @@ var Modes = map[string]Mode{
 
 func init() {
 	InstString = make(map[InstSet]string)
-	for k, v := range words {
+	for k, v := range Words {
 		InstString[v] = k
 	}
 }
@@ -85,57 +82,6 @@ func ClearTmp() {
 	}
 }
 
-func main() {
-	defer ClearTmp()
-	parseFlag()
-	//b, _ := ioutil.ReadFile("out.o")
-	//Execute(b)
-	src, err := io.ReadAll(file)
-	if err != nil {
-		return
-	}
-	if pMode == Build {
-		s := string(src)
-		fmt.Println("Source: \n", s)
-		s = strings.ReplaceAll(s, "\n", " ")
-		s = strings.ReplaceAll(s, "\t", "")
-		split := strings.Split(s, " ")
-		asm := make([]string, 0)
-		for _, v := range split {
-			if v != "" {
-				asm = append(asm, v)
-			}
-		}
-		code := GenBC(asm)
-		fmt.Println("Byte Code:")
-		for i, v := range code {
-			if i%16 == 0 {
-				if i != 0 {
-					fmt.Println()
-				}
-				fmt.Printf("%08x: ", i)
-			}
-			fmt.Printf("%02x ", v)
-
-		}
-		fmt.Println()
-		size := bytesize.New(float64(len(code)))
-
-		fmt.Printf("BC Size: %s\n", size)
-		err = ioutil.WriteFile("out.o", code, 0644)
-		if err != nil {
-			panic(err.Error())
-		}
-	} else {
-		Execute(src)
-	}
-	//for _, v := range code {
-	//	fmt.Printf("%b", v)
-	//
-	//}
-	//ioutil.WriteFile("out.o", code, os.ModePerm)
-}
-
 func CompileIR(ir string) []byte {
 	ir = strings.ReplaceAll(ir, "\n", " ")
 	asm := strings.Split(ir, " ")
@@ -153,7 +99,7 @@ func GenBC(code []string) []byte {
 		if v == "!skip" {
 			continue
 		}
-		if i, ok := words[v]; ok {
+		if i, ok := Words[v]; ok {
 			switch i {
 			case META:
 				r = append(r, Uint16ToBytes(uint16(i))...)
@@ -193,7 +139,7 @@ func GenBC(code []string) []byte {
 			case CMP:
 				r = append(r, Uint16ToBytes(uint16(CMP))...)
 				// TODO: add support for other comparison operators
-				r = append(r, Uint16ToBytes(uint16(words[s[idx+1]]))...)
+				r = append(r, Uint16ToBytes(uint16(Words[s[idx+1]]))...)
 				s[idx+1] = "!skip"
 				continue
 			case LOAD, STORE:
@@ -398,7 +344,7 @@ const (
 
 var InstString map[InstSet]string
 
-var words = map[string]InstSet{
+var Words = map[string]InstSet{
 	"EOF":   EOF,
 	"EQ":    EQ,
 	"!META": META,

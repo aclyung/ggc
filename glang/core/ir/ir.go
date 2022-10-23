@@ -1,6 +1,8 @@
-package backend
+package ir
 
-import "almeng.com/glang/core/compiler/backend/types"
+import (
+	"almeng.com/glang/core/ir/types"
+)
 
 type Func struct {
 	Ident  string
@@ -32,12 +34,11 @@ func (f *Func) BCString() string {
 	for _, b := range f.Blocks {
 		str += "\n" + b.BCString()
 	}
-	//TODO: implement BCString
-	panic("not implemented")
+	return str
 }
 
-func (b *Block) NewLoad() string {
-}
+//func (b *Block) NewLoad() string {
+//}
 
 func (b *Block) NewCall(callee *Func, args ...Value) Instruction {
 	return NewCall(callee, args...)

@@ -1,8 +1,8 @@
-package backend
+package ir
 
 import (
 	vm "almeng.com/glang-vm"
-	"almeng.com/glang/core/compiler/backend/types"
+	"almeng.com/glang/core/ir/types"
 	"fmt"
 )
 

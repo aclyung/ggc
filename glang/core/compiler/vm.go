@@ -2,8 +2,8 @@ package compiler
 
 import (
 	"almeng.com/glang-vm"
-	"almeng.com/glang/core/compiler/backend"
-	"almeng.com/glang/core/compiler/backend/types"
+	ir2 "almeng.com/glang/core/ir"
+	"almeng.com/glang/core/ir/types"
 	"almeng.com/glang/core/syntax"
 
 	"github.com/almenglee/general"
@@ -13,7 +13,7 @@ import (
 )
 
 type BCCompiler struct {
-	Module       *backend.Module
+	Module       *ir2.Module
 	Spaces       general.List[*BCContext]
 	CurrentSpace *BCContext
 	Global       *BCContext
@@ -30,7 +30,7 @@ func (c *BCCompiler) GetIR() string {
 	return c.Module.String()
 }
 
-func CompileBC(filename string, verbose bool) *BCCompiler {
+func CompileSrc(filename string, verbose bool) *BCCompiler {
 	f, ferr := os.Open(filename)
 	if ferr != nil {
 		println(ferr.Error())
@@ -100,7 +100,7 @@ func QueryName(space string, t syntax.Expr) Query {
 
 func NewBCCompiler(verbose bool) *BCCompiler {
 	return &BCCompiler{
-		Module:  backend.NewModule(),
+		Module:  ir2.NewModule(),
 		Spaces:  nil,
 		verbose: verbose,
 	}
@@ -112,19 +112,19 @@ func (c *BCCompiler) InitGlobal() {
 }
 
 type BCContext struct {
-	*backend.Block
+	*ir2.Block
 	Parent *BCContext
-	vars   map[string]backend.Value
+	vars   map[string]ir2.Value
 }
 
-func NewBCContext(b *backend.Block) *BCContext {
+func NewBCContext(b *ir2.Block) *BCContext {
 	return &BCContext{
 		Block:  b,
 		Parent: nil,
 	}
 }
 
-func (c *BCContext) NewBCContext(b *backend.Block) *BCContext {
+func (c *BCContext) NewBCContext(b *ir2.Block) *BCContext {
 	ctx := NewBCContext(b)
 	ctx.Parent = c
 	return ctx
@@ -163,10 +163,10 @@ func (c *BCCompiler) CompileFile(f *syntax.File) {
 	Funcs.Iter(func(i int, v *syntax.FuncDecl) { c.CompileFunc(space, FuncDefs[i], v) })
 }
 
-func (c *BCCompiler) CompileFunc(space string, ctx *BCContext, def *syntax.FuncDecl) *backend.Func {
-	for _, v := range def.Param {
-		ctx.vars[v.Name.Value] = ctx.NewStore()
-	}
+func (c *BCCompiler) CompileFunc(space string, ctx *BCContext, def *syntax.FuncDecl) *ir2.Func {
+	//for _, v := range def.Param {
+	//	ctx.vars[v.Name.Value] = ctx.NewStore()
+	//}
 	last, ok := def.Body.StmtList[len(def.Body.StmtList)-1].(*syntax.ReturnStmt)
 	if !ok {
 		last = &syntax.ReturnStmt{Return: nil}
@@ -175,8 +175,8 @@ func (c *BCCompiler) CompileFunc(space string, ctx *BCContext, def *syntax.FuncD
 
 	c.CompileBody(ctx, def.Body)
 	fn := ctx.Block.Parent
-	ret := fn.Sig.RetType
-	_ = ret
+	//ret := fn.Sig.RetType
+	//_ = ret
 	return fn
 }
 
@@ -187,7 +187,7 @@ func (c *BCCompiler) CompileBody(ctx *BCContext, body *syntax.BlockStmt) *BCCont
 	return ctx
 }
 
-func (c *BCCompiler) CompileStmt(ctx *BCContext, s syntax.Stmt) backend.Value {
+func (c *BCCompiler) CompileStmt(ctx *BCContext, s syntax.Stmt) ir2.Value {
 	switch s.(type) {
 	case *syntax.ExprStmt:
 		stmt := s.(*syntax.ExprStmt)
@@ -244,18 +244,18 @@ func (c *BCCompiler) DefineFunc(space string, f *syntax.FuncDecl) *BCContext {
 	return c.CurrentSpace.NewBCContext(fn.NewBlock("entry"))
 }
 
-func (c *BCCompiler) CompileExpr(ctx *BCContext, s syntax.Expr) backend.Value {
+func (c *BCCompiler) CompileExpr(ctx *BCContext, s syntax.Expr) ir2.Value {
 	switch s.(type) {
 	case *syntax.CallExpr:
 		expr := s.(*syntax.CallExpr)
 		name := expr.Func.(*syntax.Name).Value
-		callees := general.AsList(c.Module.Funcs).Filter(func(i int, v *backend.Func) bool { return v.Ident == name })
+		callees := general.AsList(c.Module.Funcs).Filter(func(i int, v *ir2.Func) bool { return v.Ident == name })
 		if *callees == nil {
 			println("function not found:", name)
 			os.Exit(1)
 		}
 		callee := *(callees.First())
-		var args []backend.Value
+		var args []ir2.Value
 		general.AsList(expr.ArgList).Each(func(v syntax.Expr) { args = append(args, c.CompileExpr(ctx, v)) })
 		ctx.NewCall(callee, args...)
 
@@ -263,16 +263,20 @@ func (c *BCCompiler) CompileExpr(ctx *BCContext, s syntax.Expr) backend.Value {
 		expr := s.(*syntax.BasicLit)
 		switch expr.Kind {
 		case syntax.StringLit:
-			return backend.NewStringValue(expr.Value)
+			return ir2.NewStringValue(expr.Value)
 		case syntax.IntLit:
 			v, err := strconv.ParseInt(expr.Value, 10, 64)
 			if err != nil {
 				panic("wrong value")
 			}
-			return backend.NewIntValue(types.I64, v)
+			return ir2.NewIntValue(types.I64, v)
 		}
 	}
 	return nil
+}
+
+func (c *BCCompiler) GetAsm() *ir2.Assembler {
+	return ir2.NewAssembler(c.GetIR())
 }
 
 //func (c *BCCompiler) CompileType(space string, t *syntax.TypeDecl) {
