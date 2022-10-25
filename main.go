@@ -5,19 +5,24 @@ import (
 	"almeng.com/glang/core/compiler"
 	"almeng.com/glang/core/ir"
 	"fmt"
+	"github.com/inhies/go-bytesize"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
+	"strings"
 )
 
 var (
-	srctype uint8
-	output  string
-	dest    uint8
-	path    string
-	verbose *bool
-	defers  = make([]func(), 0)
+	srctype              uint8
+	output               string
+	dest                 uint8
+	path                 string
+	run                  *bool
+	verbose              *bool
+	targetOS, targetArch string
+	defers               = make([]func(), 0)
 )
 
 // BuildExec modes
@@ -38,7 +43,7 @@ func main() {
 	// TODO: support llvm version
 	//c := compiler.Compile(path, *verbose, *target)
 	//BuildExec(c)
-
+	//vm.NewVM(ReadSource("./foo.bc")).Execute()
 	switch path[len(path)-3:] {
 	case ".gg":
 		srctype = Src
@@ -46,6 +51,11 @@ func main() {
 		srctype = IR
 	case ".bc":
 		srctype = BC
+	}
+
+	if *run && srctype == BC {
+		vm.NewVM(ReadSource(path)).Execute()
+		return
 	}
 	if srctype == dest {
 		fmt.Println("Error: Source and destination type are the same")
@@ -56,8 +66,8 @@ func main() {
 		fmt.Println("Error: Source type is higher than destination type")
 		os.Exit(1)
 	}
+	outtyp := Exec
 	if output != "" && len(output) > 3 {
-		outtyp := Exec
 		switch output[len(output)-3:] {
 		case ".gg":
 			outtyp = Src
@@ -70,15 +80,16 @@ func main() {
 			fmt.Println("Error: Output and destination type are not the same")
 			os.Exit(1)
 		}
-	} else {
+	}
+
+	if output == "" {
 		switch dest {
+		case Exec:
+			output = "out"
 		case IR:
 			output = "out.ir"
 		case BC:
 			output = "out.bc"
-		case Exec:
-			output = "out"
-
 		}
 	}
 
@@ -119,7 +130,7 @@ func Compile(srctype uint8) {
 
 				}
 				fmt.Println()
-				fmt.Println("Size:", Bitsize(len(bc)))
+				fmt.Println("Size:", Bitsize(float64(len(bc))))
 			}
 			bc = append(bc, vm.Uint16ToBytes(uint16(vm.EOF))...)
 			srctype++
@@ -133,6 +144,10 @@ func Compile(srctype uint8) {
 			continue
 		}
 
+	}
+	if *run {
+		vm.NewVM(bc).Execute()
+		return
 	}
 	switch dest {
 	case IR, BC:
@@ -151,7 +166,6 @@ func Compile(srctype uint8) {
 	case Exec:
 		BuildExec(bc)
 	}
-	BuildExec(bc)
 }
 
 const module = `module main
@@ -169,7 +183,7 @@ import (
 )
 
 func main() {
-	vm.Execute(`
+	vm.NewVM(`
 
 func GoCode(code []byte) string {
 	bcsrc := "[]byte{\n"
@@ -183,7 +197,7 @@ func GoCode(code []byte) string {
 		bcsrc += fmt.Sprintf("%d,", v)
 	}
 	bcsrc += "\n\t}"
-	return GoPrefix + bcsrc + ")\n}"
+	return GoPrefix + bcsrc + ").Execute()\n}"
 }
 
 func BuildExec(code []byte) {
@@ -209,6 +223,24 @@ func BuildExec(code []byte) {
 	// BuildExec go
 	cmd := exec.Command("go", "build", "-o", wd+"/"+output, temp+"/main.go")
 	cmd.Dir = temp
+	cmd.Env = os.Environ()
+	osSet, archSet := false, false
+	for i, v := range cmd.Env {
+		if strings.HasPrefix(v, "GOOS=") {
+			cmd.Env[i] = "GOOS=" + targetOS
+			osSet = true
+		}
+		if strings.HasPrefix(v, "GOARCH=") {
+			cmd.Env[i] = "GOARCH=" + targetArch
+			archSet = true
+		}
+	}
+	if !osSet {
+		cmd.Env = append(cmd.Env, "GOOS="+targetOS)
+	}
+	if !archSet {
+		cmd.Env = append(cmd.Env, "GOARCH="+targetArch)
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
@@ -245,13 +277,27 @@ func ClearTmp() {
 func parseFlag() {
 	verbose = new(bool)
 	*verbose = false
+	run = new(bool)
+	*run = false
 	output = ""
 	args := os.Args[1:]
 	dest = Exec
 	mod_args := make([]string, 0)
+	targetOS = runtime.GOOS
+	targetArch = runtime.GOARCH
 	for i, v := range args {
 		if v != "" && v[0] == '-' {
 			switch v {
+			case "-t", "--target":
+				if len(args) > i+1 {
+					targetOS = args[i+1]
+					args[i+1] = ""
+				}
+			case "-a", "--arch":
+				if len(args) > i+1 {
+					targetArch = args[i+1]
+					args[i+1] = ""
+				}
 			case "-v", "--verbose":
 				*verbose = true
 			case "-bc":
@@ -281,10 +327,31 @@ func parseFlag() {
 		fmt.Println("invalid args")
 		os.Exit(1)
 	}
+
+	if mod_args[0] == "run" {
+		path = mod_args[1]
+		*run = true
+		if dest != Exec {
+			fmt.Println("Warning: Ignoring -bc/-ir flag. Command was already set to run")
+		}
+		dest = BC
+		if output != "" {
+			fmt.Println("Warning: Ignoring -o flag. Command was already set to run(no build output)")
+		}
+		output = "_.bc"
+		return
+	}
+
 	if mod_args[0] != "build" {
 		panic("invalid arg")
 	}
 	path = mod_args[1]
+	triple := targetArch + "-" + "dynamic" + "-" + targetOS
+	if *verbose {
+		defers = append(defers, func() { fmt.Println("Target:", triple) })
+	}
+	// Check validity of target specifier
+	compiler.TargetFromTriple(triple)
 }
 
 const (
@@ -301,11 +368,6 @@ const (
 
 var bsize = []string{"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
 
-func Bitsize(size int) string {
-	b := 0
-	for size > 1024 && b < YB {
-		size = size >> 10
-		b++
-	}
-	return fmt.Sprintf("%d%s", size, bsize[b])
+func Bitsize(size float64) string {
+	return bytesize.New(size).String()
 }

@@ -3,14 +3,17 @@ package types
 import "strconv"
 
 type Type interface {
+	Name() string
 	SetName(name string)
 	BCString() string
 }
 
 type (
+	_type struct {
+		name string
+	}
 	FuncType struct {
-		// Type name; or empty if not present.
-		TypeName string
+		_type
 		// Return type.
 		RetType Type
 		// Function parameters.
@@ -18,24 +21,37 @@ type (
 		// Variable number of function arguments.
 		Variadic bool
 	}
-	VoidType struct{}
-	IntType  struct {
+	VoidType struct {
+		_type
+	}
+	IntType struct {
+		_type
 		BitSize uint64
 	}
 	FloatType struct {
+		_type
 		BitSize uint64
 	}
 	SliceType struct {
+		_type
 		Elem Type
 	}
 	StructType struct {
-		TypeName string
-		Fields   []Type
+		_type
+		Fields []Type
 	}
 	PtrType struct {
+		_type
 		Elem Type
 	}
 )
+
+func (t *_type) Name() string {
+	return t.name
+}
+func (t *_type) SetName(name string) {
+	t.name = name
+}
 
 func (v VoidType) BCString() string {
 	return "void"
@@ -52,25 +68,15 @@ func (i IntType) BCString() string {
 	return "i" + strconv.Itoa(int(i.BitSize))
 }
 
-func (s *SliceType) SetName(name string) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (i IntType) SetName(name string) {
-	//TODO implement me
-	panic("implement me")
-}
-
 var (
-	I8     = &IntType{8}
-	I16    = &IntType{16}
-	I32    = &IntType{32}
-	I64    = &IntType{64}
-	I8Ptr  = &PtrType{I8}
-	I16Ptr = &PtrType{I16}
-	I32Ptr = &PtrType{I32}
-	I64ptr = &PtrType{I64}
+	I8     = NewIntType(8)
+	I16    = NewIntType(16)
+	I32    = NewIntType(32)
+	I64    = NewIntType(64)
+	I8Ptr  = NewPtrType(I8)
+	I16Ptr = NewPtrType(I16)
+	I32Ptr = NewPtrType(I32)
+	I64ptr = NewPtrType(I64)
 
 	String = &SliceType{Elem: I8}
 	Void   = &VoidType{}
@@ -82,15 +88,19 @@ func (v VoidType) SetName(name string) {
 }
 
 func NewIntType(bitSize uint64) *IntType {
+	i := new(IntType)
 	switch bitSize {
 	case 8, 16, 32, 64:
 		break
 	default:
 		panic("invalid bit size")
 	}
-	return &IntType{bitSize}
+	i.BitSize = bitSize
+	return i
 }
 
 func NewPtrType(typ Type) *PtrType {
-	return &PtrType{typ}
+	p := new(PtrType)
+	p.Elem = typ
+	return p
 }

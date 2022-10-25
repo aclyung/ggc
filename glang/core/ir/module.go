@@ -23,7 +23,7 @@ func NewModule() *Module {
 	return &Module{Funcs: make([]*Func, 0), TypeDecl: general.List[types.Type]{}}
 }
 
-func (m *Module) NewFunc(name string, ret any, param ...types.Type) *Func {
+func (m *Module) NewFunc(name string, ret any, param ...*Param) *Func {
 	f := NewFunc(name, ret, param...)
 	m.Funcs = append(m.Funcs, f)
 	return f

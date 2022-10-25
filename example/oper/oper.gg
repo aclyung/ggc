@@ -1,0 +1,16 @@
+space main
+
+type matrix []float64
+
+oper (a matrix) add(b int) matrix {
+    return 3
+}
+
+oper (a matrix) radd(b int) matrix { return 3 }
+
+oper (a matrix) sub(b matrix) matrix {return 3}
+
+oper (a matrix) add(b matrix) matrix {return 3}
+
+oper (a matrix) mul(b matrix) matrix {return 3}
+oper (a matrix) div(b matrix) matrix {return 3}

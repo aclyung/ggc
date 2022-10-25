@@ -58,7 +58,7 @@ func (p *parser) EOF() *File {
 		default:
 			str := p.token.String()
 			if p.token == _Name {
-				str += "(" + p.segment() + ")"
+				str += "(" + string(p.segment()) + ")"
 			}
 			p.errorAt(p.pos(), "ERROR: non-declaration statement outside function body: "+Red+str+Reset)
 			p.next()
@@ -87,12 +87,12 @@ func (p *parser) print(msg string) {
 	if !p.verbose {
 		return
 	}
-	if line != p.line {
+	if line != int(p.line) {
 		fmt.Printf("line %-4d%s%s\n", p.line, p.indent, msg)
 	} else {
 		fmt.Printf("         %s%s\n", p.indent, msg)
 	}
-	line = p.line
+	line = int(p.line)
 }
 
 // Testing Literal
@@ -120,7 +120,7 @@ func (p *parser) got(tok Token) bool {
 func (p *parser) init(r io.Reader, errh ErrHandler) {
 	p.errh = errh
 	p.lexer.init(r,
-		func(line, col int, msg string) {
+		func(line, col uint, msg string) {
 			p.errorAt(p.posAt(line, col), msg)
 
 		},
@@ -139,9 +139,9 @@ func tokstring(tok Token) string {
 
 // ----------------------------------------------------------------------------
 // Error handling
-func (p *parser) pos() Pos                { return p.posAt(p.line, p.col) }
-func (p *parser) posAt(line, col int) Pos { return NewPos(line, col) }
-func (p *parser) error(msg string)        { p.errorAt(p.pos(), msg) }
+func (p *parser) pos() Pos                 { return p.posAt(p.line, p.col) }
+func (p *parser) posAt(line, col uint) Pos { return NewPos(line, col) }
+func (p *parser) error(msg string)         { p.errorAt(p.pos(), msg) }
 func (p *parser) errorAt(pos Pos, msg string) {
 	err := Error{pos, msg}
 	if p.errh == nil {

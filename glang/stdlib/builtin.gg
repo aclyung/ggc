@@ -1,3 +1,0 @@
-space builtin
-
-func printf(format string, args...)

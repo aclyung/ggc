@@ -22,17 +22,22 @@ LABEL __TEXT
 !META program_entry
 LABEL main
 	LOAD 1000
+	PUSH i64 1
 	PRINT
 
 	PUSH i8 999
 	PUSH i8 999
 	CMP EQ
-	NOT
-	NOT
+
+	PUSH string label:
+    PUSH string Current
+    PUSH i64 2
+    PRINT
 	BR then else
 
 LABEL then
 	LOAD 2000
+	PUSH i64 1
 	PRINT
 	CALL func.foo
 	CALL func.foo
@@ -42,14 +47,18 @@ LABEL then
 
 LABEL else
 	LOAD 3000
+	PUSH i64 1
 	PRINT
 
 
 LABEL escape
 	LOAD 4000
+	PUSH i64 1
 	PRINT
 
 	EOF
+
+
 
 LABEL func.add_string_and_print
 	STORE 0
@@ -59,6 +68,7 @@ LABEL func.add_string_and_print
 	LOAD 0
 
 	ADD
+	PUSH i64 1
 	PRINT
 
 	RET

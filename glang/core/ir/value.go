@@ -12,6 +12,18 @@ type Value interface {
 	BCString() string
 }
 
+type DebugString struct {
+	string
+}
+
+func NewDebugString(s string) *DebugString {
+	return &DebugString{s}
+}
+
+func (ds *DebugString) BCString() string {
+	return ds.string
+}
+
 type _value struct {
 	Typ types.Type
 	Val string

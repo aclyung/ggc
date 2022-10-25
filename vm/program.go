@@ -5,8 +5,27 @@ import (
 	"reflect"
 )
 
-type Program struct {
-	l       []byte
+type Identifier struct {
+	counter uint64
+	ident   map[string]uint64
+}
+
+func NewIdentifier() *Identifier {
+	return &Identifier{counter: 0, ident: make(map[string]uint64)}
+}
+
+func ExtractValue(b []byte) (typ DataType, data []byte) {
+	typ = DataType(b[0])
+	data = b[1:]
+	if typ.IsDynamic() {
+		size := binary.BigEndian.Uint64(data[:8])
+		data = data[8 : 8+size]
+	}
+	return
+}
+
+type VM struct {
+	program []byte
 	index   int
 	stack   *Stack[byte]
 	vars    map[uint64][]byte
@@ -14,9 +33,9 @@ type Program struct {
 	Idents  map[string]*Identifier
 }
 
-func NewProgram(l []byte) *Program {
-	return &Program{
-		l,
+func NewVM(code []byte) *VM {
+	return &VM{
+		code,
 		0,
 		NewStack[byte](),
 		make(map[uint64][]byte),
@@ -25,116 +44,105 @@ func NewProgram(l []byte) *Program {
 	}
 }
 
-func (p *Program) Next() byte {
-	if p.index >= len(p.l) {
+func (vm *VM) Next() byte {
+	if vm.index >= len(vm.program) {
 		panic("index out of bounds")
 	}
-	defer func() { p.index++ }()
-	return p.l[p.index]
+	defer func() { vm.index++ }()
+	return vm.program[vm.index]
 }
 
-func (p *Program) InstJump() {
-	p.index = int(p.Int64())
+func (vm *VM) InstJump() {
+	vm.index = int(vm.Int64())
 }
 
-func (p *Program) StackPopValue() []byte {
-	return PopValue(p.stack)
+func (vm *VM) StackPopValue() []byte {
+	return PopValue(vm.stack)
 }
 
-func (p *Program) ProgramReadValue() (b []byte) {
-	typ := DataType(p.Next())
+func (vm *VM) ProgramReadValue() (b []byte) {
+	typ := DataType(vm.Next())
 	d_size := typ.Size()
 	if typ.IsDynamic() {
 		//Dynamically sized data
-		size := p.Int64()
-		b = p.ReadBuffer(int(size))
+		size := vm.Int64()
+		b = vm.ReadBuffer(int(size))
 		for i, v := range b {
-			b[i] = v ^ byte(i) ^ 0x80
+			b[i] = v //^ byte(i) ^ 0x80
 		}
 		b = append(WriteIntToBytes(size, 64), b...)
 	} else {
-		b = p.ReadBuffer(d_size)
+		b = vm.ReadBuffer(d_size)
 	}
 	b = append([]byte{byte(typ)}, b...)
 	return
 }
 
-func (p *Program) InstRet() {
-	p.index = int(p.retAddr.Pop())
+func (vm *VM) InstRet() {
+	vm.index = int(vm.retAddr.Pop())
 }
 
-func (p *Program) InstCall() {
-	p.retAddr.Push(uint64(p.index + 8))
-	p.InstJump()
+func (vm *VM) InstCall() {
+	vm.retAddr.Push(uint64(vm.index + 8))
+	vm.InstJump()
 }
 
-func (p *Program) InstPush() {
-	p.StackPushValue(p.ProgramReadValue())
-	//typ := DataType(p.Next())
-	//d_size := typ.Size()
-	//if typ.IsDynamic() {
-	//	//Dynamically sized data
-	//	size := p.Int64()
-	//	p.stack.PushAll(true, p.ReadBuffer(int(size))...)
-	//	p.stack.PushAll(true, WriteIntToBytes(size, 64)...)
-	//} else {
-	//	p.stack.PushAll(true, p.ReadBuffer(d_size)...)
-	//}
-	//p.stack.Push(byte(typ))
+func (vm *VM) InstPush() {
+	vm.StackPushValue(vm.ProgramReadValue())
 }
 
-func (p *Program) StackPushValue(v []byte) {
-	p.stack.PushAll(true, v...)
+func (vm *VM) StackPushValue(v []byte) {
+	vm.stack.PushAll(true, v...)
 }
 
-func (p *Program) InstStore() {
-	addr := p.Int64()
-	p.vars[addr] = p.StackPopValue()
+func (vm *VM) InstStore() {
+	addr := vm.Int64()
+	vm.vars[addr] = vm.StackPopValue()
 }
 
-func (p *Program) InstCmp() {
-	cond, a, b := p.Inst(), p.StackPopValue(), p.StackPopValue()
+func (vm *VM) InstCmp() {
+	cond, a, b := vm.Inst(), vm.StackPopValue(), vm.StackPopValue()
 	switch cond {
 	case EQ:
 		if reflect.DeepEqual(a, b) {
-			p.StackPushValue(TRUE)
+			vm.StackPushValue(TRUE)
 		} else {
-			p.StackPushValue(FALSE)
+			vm.StackPushValue(FALSE)
 		}
 	default:
 		panic("invalid comparison instruction")
 	}
 }
 
-func (p *Program) InstLoad() {
-	addr := p.Int64()
-	p.stack.PushAll(true, p.vars[addr]...)
+func (vm *VM) InstLoad() {
+	addr := vm.Int64()
+	vm.stack.PushAll(true, vm.vars[addr]...)
 }
 
-func (p *Program) ReadBuffer(size int) []byte {
-	defer func() { p.index += size }()
-	return p.l[p.index : p.index+size]
+func (vm *VM) ReadBuffer(size int) []byte {
+	defer func() { vm.index += size }()
+	return vm.program[vm.index : vm.index+size]
 }
 
-func (p *Program) Inst() InstSet {
-	r := InstSet(binary.BigEndian.Uint16(p.ReadBuffer(2)))
+func (vm *VM) Inst() InstSet {
+	r := InstSet(binary.BigEndian.Uint16(vm.ReadBuffer(2)))
 	if r >= 0xff00 && r < inst_end {
 		return r
 	}
 	panic("invalid instruction")
 }
 
-func (p *Program) Int64() uint64 {
-	r := binary.BigEndian.Uint64(p.ReadBuffer(8))
+func (vm *VM) Int64() uint64 {
+	r := binary.BigEndian.Uint64(vm.ReadBuffer(8))
 	return r
 }
 
-func (p *Program) InstBranch() {
-	cond := Const(p.StackPopValue())
+func (vm *VM) InstBranch() {
+	cond := Const(vm.StackPopValue())
 	if cond.Equal(TRUE) {
-		p.InstJump()
+		vm.InstJump()
 	} else {
-		p.Int64()
-		p.InstJump()
+		vm.Int64()
+		vm.InstJump()
 	}
 }

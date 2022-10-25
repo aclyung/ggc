@@ -133,7 +133,7 @@ func (a *Assembler) GenBC() []byte {
 						as.Put(Uint64ToBytes(size)...)
 						ss := []byte(str)
 						for i, v := range ss {
-							ss[i] = v ^ byte(i) ^ 0x80
+							ss[i] = v //^ byte(i) ^ 0x80
 						}
 						as.Put(ss...)
 						continue

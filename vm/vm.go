@@ -5,8 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 )
 
 var builtins = `
@@ -26,199 +24,11 @@ SCANF num => void // string, ...any
 
 type Mode uint8
 
-const (
-	Build Mode = iota
-	ASM        //not yet
-	BC         // .ir to .bc
-	Run
-)
-
-var Modes = map[string]Mode{
-	"build": Build,
-	"run":   Run,
-	"bc":    BC,
-}
-
 func init() {
 	InstString = make(map[InstSet]string)
 	for k, v := range Words {
 		InstString[v] = k
 	}
-}
-
-func ValidMode(m string) (mod Mode, b bool) {
-	mod, b = Modes[m]
-	return
-}
-
-var (
-	pMode  Mode
-	file   *os.File
-	defers = make([]func(), 0)
-)
-
-func parseFlag() {
-	args := os.Args[1:]
-	if len(args) != 2 {
-		panic("invalid args")
-	}
-	if mode, ok := Modes[args[0]]; ok {
-		pMode = mode
-	} else {
-		panic("invalid arg")
-	}
-	open, err := os.Open(args[1])
-	if err == nil {
-		file = open
-		defers = append(defers, func() { file.Close() })
-		return
-	}
-	panic("invalid arg")
-}
-
-func ClearTmp() {
-	for _, v := range defers {
-		v()
-	}
-}
-
-func CompileIR(ir string) []byte {
-	ir = strings.ReplaceAll(ir, "\n", " ")
-	asm := strings.Split(ir, " ")
-	code := GenBC(asm)
-	return code
-}
-
-func GenBC(code []string) []byte {
-	s := code
-	var r []byte
-	addresses := make(map[string][]byte)
-	jumps := make(map[int64]string)
-	typedefs := make(map[string]string)
-	for idx, v := range s {
-		if v == "!skip" {
-			continue
-		}
-		if i, ok := Words[v]; ok {
-			switch i {
-			case META:
-				r = append(r, Uint16ToBytes(uint16(i))...)
-				str := s[idx+1]
-				s[idx+1] = "!skip"
-				str = handleEscape(str)
-				size := uint64(len(str))
-				r = append(r, Uint64ToBytes(size+6)...)
-				r = append(r, []byte("!META "+str)...)
-				continue
-			case TYPE:
-				typedefs[s[idx+1]] = s[idx+2]
-				s[idx+1] = "!skip"
-				s[idx+2] = "!skip"
-			case LABEL:
-				addresses[s[idx+1]] = Uint64ToBytes(uint64(len(r)))
-				s[idx+1] = "!skip"
-				continue
-			case JMP, CALL:
-				r = append(r, Uint16ToBytes(uint16(i))...)
-				jumps[int64(len(r))] = s[idx+1]
-				r = append(r, Uint64ToBytes(0)...)
-				s[idx+1] = "!skip"
-				continue
-			case BR:
-				r = append(r, Uint16ToBytes(uint16(BR))...)
-				jumps[int64(len(r))] = s[idx+1]
-				r = append(r, Uint64ToBytes(0)...)
-				s[idx+1] = "!skip"
-				jumps[int64(len(r))] = s[idx+2]
-				r = append(r, Uint64ToBytes(0)...)
-				s[idx+2] = "!skip"
-				continue
-			case RET:
-				r = append(r, Uint16ToBytes(uint16(RET))...)
-				continue
-			case CMP:
-				r = append(r, Uint16ToBytes(uint16(CMP))...)
-				// TODO: add support for other comparison operators
-				r = append(r, Uint16ToBytes(uint16(Words[s[idx+1]]))...)
-				s[idx+1] = "!skip"
-				continue
-			case LOAD, STORE:
-				r = append(r, Uint16ToBytes(uint16(i))...)
-				num, err := strconv.ParseInt(s[idx+1], 10, 64)
-				if err != nil {
-					panic(err)
-				}
-				r = append(r, Uint64ToBytes(uint64(num))...)
-				s[idx+1] = "!skip"
-				continue
-
-			case PUSH:
-				// PRE: PUSH TYPE VALUE
-
-				// PUSH
-				r = append(r, Uint16ToBytes(uint16(i))...)
-				if typ, typeValid := LitTypes[s[idx+1]]; typeValid {
-					// PUSH TYPE
-					r = append(r, byte(typ))
-					s[idx+1] = "!skip"
-					if typ == STRING {
-						// POST: PUSH TYPE SIZE STRING
-						str := s[idx+2]
-						s[idx+2] = "!skip"
-						str = handleEscape(str)
-						size := uint64(len(str))
-						r = append(r, Uint64ToBytes(size)...)
-						ss := []byte(str)
-						for i, v := range ss {
-							ss[i] = v ^ byte(i) ^ 0x80
-						}
-						r = append(r, ss...)
-						continue
-					}
-					// PUSH TYPE VALUE(BIT_SIZE)
-					n, err := strconv.ParseInt(s[idx+2], 10, 64)
-					if err == nil {
-						bitsize := LitDataByteSize[typ] * 8
-						r = append(r, WriteIntToBytes(uint64(n), bitsize)...)
-						s[idx+2] = "!skip"
-						continue
-					}
-				}
-
-				continue
-
-			default:
-				r = append(r, Uint16ToBytes(uint16(i))...)
-				continue
-			}
-
-		}
-		i, err := strconv.ParseInt(v, 10, 64)
-		if err == nil {
-			r = append(r, Uint64ToBytes(uint64(i))...)
-			continue
-		}
-
-		r = append(r, []byte(v)...)
-	}
-	for k, v := range jumps {
-		r = append(r[:k], append(addresses[v], r[k+8:]...)...)
-	}
-	return r
-}
-
-func handleEscape(s string) string {
-	s = strings.ReplaceAll(s, `\n`, "\n")
-	s = strings.ReplaceAll(s, `\t`, "\t")
-	s = strings.ReplaceAll(s, `\r`, "\r")
-	s = strings.ReplaceAll(s, `\0`, "\000")
-	s = strings.ReplaceAll(s, `\20`, " ")
-	s = strings.ReplaceAll(s, `\\`, "\\")
-	return s
-}
-
-type ByteStack struct {
-	Stack[byte]
 }
 
 type Stack[V any] struct {
@@ -306,6 +116,7 @@ const (
 	LOCAL
 	LABEL
 	PRINT
+	PRINTLN
 	ADD
 	SUB
 	MUL
@@ -319,9 +130,6 @@ const (
 	EQ
 	NOT
 	GTR
-	// STRING uft8 string indicator
-	// STRING i64 len []byte
-	//STRING
 	STORE
 	ARRAY
 	UINT64
@@ -329,45 +137,33 @@ const (
 	inst_end
 )
 
-type Type uint8
-
-const (
-	i8 Type = 1 + iota
-	i16
-	i32
-	i64
-	u8
-	u16
-	u32
-	u64
-)
-
 var InstString map[InstSet]string
 
 var Words = map[string]InstSet{
-	"EOF":   EOF,
-	"EQ":    EQ,
-	"!META": META,
-	"TYPE":  TYPE,
-	"PUSH":  PUSH,
-	"POP":   POP,
-	"CONST": CONST,
-	"LOAD":  LOAD,
-	"STORE": STORE,
-	"LOCAL": LOCAL,
-	"LABEL": LABEL,
-	"ADD":   ADD,
-	"NOT":   NOT,
-	"SUB":   SUB,
-	"MUL":   MUL,
-	"DIV":   DIV,
-	"REM":   REM,
-	"CALL":  CALL,
-	"RET":   RET,
-	"JMP":   JMP,
-	"BR":    BR,
-	"CMP":   CMP,
-	"PRINT": PRINT,
+	"EOF":     EOF,
+	"EQ":      EQ,
+	"!META":   META,
+	"TYPE":    TYPE,
+	"PUSH":    PUSH,
+	"POP":     POP,
+	"CONST":   CONST,
+	"LOAD":    LOAD,
+	"STORE":   STORE,
+	"LOCAL":   LOCAL,
+	"LABEL":   LABEL,
+	"ADD":     ADD,
+	"NOT":     NOT,
+	"SUB":     SUB,
+	"MUL":     MUL,
+	"DIV":     DIV,
+	"REM":     REM,
+	"CALL":    CALL,
+	"RET":     RET,
+	"JMP":     JMP,
+	"BR":      BR,
+	"CMP":     CMP,
+	"PRINT":   PRINT,
+	"PRINTLN": PRINTLN,
 	//"STRING": STRING,
 	"ARRAY":  ARRAY,
 	"UINT64": UINT64,
@@ -378,53 +174,70 @@ func (i InstSet) String() string {
 	return InstString[i]
 }
 
-func readInt64(bytes []byte, index int64) uint64 {
-	v := bytes[index : index+8]
-	return binary.BigEndian.Uint64(v)
-}
-
-func Execute(hex []byte) {
-	program := NewProgram(hex)
+func (vm *VM) Execute() {
+	length := len(vm.program)
 loop:
-	for program.index < len(hex) {
-		inst := program.Inst()
+	for vm.index < length {
+		inst := vm.Inst()
 		switch inst {
 		case EOF:
-			if len(program.stack.l) == 0 {
-				program.stack.Push(0)
+			if len(vm.stack.l) == 0 {
+				vm.stack.Push(0)
 			}
 			break loop
 		case META:
-			program.index += int(program.Int64())
+			vm.index += int(vm.Int64())
+		case POP:
+			vm.StackPopValue()
 		case PUSH:
-			program.InstPush()
+			vm.InstPush()
 		case CALL:
-			program.InstCall()
+			vm.InstCall()
 		case RET:
-			program.InstRet()
+			vm.InstRet()
 		case STORE:
-			program.InstStore()
+			vm.InstStore()
 		case LOAD:
-			program.InstLoad()
+			vm.InstLoad()
 
 		case JMP:
-			program.InstJump()
+			vm.InstJump()
 		case CMP:
-			program.InstCmp()
-		case PRINT:
-			val := program.StackPopValue()
-
-			str := string(val[9:])
-			fmt.Print(str)
+			vm.InstCmp()
+		case PRINT, PRINTLN:
+			num := binary.BigEndian.Uint64(vm.StackPopValue()[1:])
+			str := ""
+			for i := 0; i < int(num); i++ {
+				typ, data := ExtractValue(vm.StackPopValue())
+				switch typ {
+				case UI8:
+					str += fmt.Sprint(data[0])
+				case UI64:
+					str += fmt.Sprint(binary.BigEndian.Uint64(data))
+				case BOOL:
+					if TRUE.Equal(data) {
+						str += "true"
+					} else {
+						str += "false"
+					}
+				case STRING:
+					str += string(data)
+				}
+			}
+			if inst == PRINTLN {
+				fmt.Println(str)
+			} else {
+				fmt.Print(str)
+			}
 		case BR:
-			program.InstBranch()
+			vm.InstBranch()
 		case NOT:
-			if DataType(program.stack.Head()) != BOOL {
+			if DataType(vm.stack.Head()) != BOOL {
 				panic("not bool")
 			}
-			program.stack.l[len(program.stack.l)-2] = ^program.stack.l[len(program.stack.l)-2]
+			vm.stack.l[len(vm.stack.l)-2] = ^vm.stack.l[len(vm.stack.l)-2]
 		case ADD, SUB, MUL, DIV, REM:
-			b, a := program.StackPopValue(), program.StackPopValue()
+			b, a := vm.StackPopValue(), vm.StackPopValue()
 			typ_a, typ_b := a[0], b[0]
 
 			var res []byte
@@ -444,8 +257,8 @@ loop:
 				b_size := WriteIntToBytes(size, 64)
 				_ = b_size
 				res = append(b_size, append(a, b...)...)
-				program.stack.PushAll(true, res...)
-				program.stack.Push((byte)(STRING))
+				vm.stack.PushAll(true, res...)
+				vm.stack.Push((byte)(STRING))
 				continue
 			}
 
@@ -461,51 +274,21 @@ loop:
 			//case REM:
 			//	res = a % b
 			//}
-			//program.stack.PushAll(true, res...)
+			//vm.stack.PushAll(true, res...)
 			panic("error")
 
 		}
 	}
-	if len(program.stack.l) != 1 && program.stack.Head() == 0 {
-		//fmt.Println("exit code 1(stack not empty)")
+	fmt.Println("\nVM Diagnosis:")
+	fmt.Println("Stack:", vm.stack.l)
+	fmt.Println("Stack Length:", len(vm.stack.l))
+	if len(vm.stack.l) != 1 && vm.stack.Head() != 0 {
+		fmt.Println("exit code 1(stack not empty)")
 		os.Exit(1)
 	}
+	fmt.Println("Stack Empty: true")
 	os.Exit(0)
 }
-
-func FormatProgramData(program *Program, typ DataType) (b []byte) {
-	switch typ {
-	case UI8:
-		b = []byte{program.Next()}
-	case UI64:
-		val := program.Int64()
-		b = WriteIntToBytes(val, 64)
-	case STRING:
-		size := program.Int64()
-		str := program.ReadBuffer(int(size))
-		b = append(str, WriteIntToBytes(size, 64)...)
-	default:
-		panic("unexpected type")
-	}
-	return
-}
-
-//func SetData(v []byte, typ DataType) (b []byte) {
-//	switch typ {
-//	case UI8:
-//		b = program.Next()
-//	case UI64:
-//		val := program.Int64()
-//		program.stack.PushAll(true, WriteIntToBytes(val, 64)...)
-//	case STRING:
-//		size := program.Int64()
-//		str := program.ReadBuffer(int(size))
-//		program.stack.PushAll(true, str...)
-//		program.stack.PushAll(true, WriteIntToBytes(size, 64)...)
-//	default:
-//		panic("unexpected type")
-//	}
-//}
 
 func PopValue(s *Stack[byte]) (b []byte) {
 	typ := s.Pop()
@@ -527,51 +310,3 @@ func GetValue(s *Stack[byte], t DataType) (b []byte) {
 	}
 	return
 }
-
-//func Run(insts []InstSet) {
-//	programCounter := 0
-//	stack := make([]int64, 0)
-//	for programCounter < len(insts) {
-//		ident := insts[programCounter]
-//		switch ident {
-//		case PUSH:
-//			val := insts[programCounter+1]
-//			stack = append(stack, val)
-//			programCounter++
-//		case ADD:
-//			val := stack[len(stack)-1] + stack[len(stack)-2]
-//			stack = append(stack, val)
-//			programCounter++
-//		}
-//	}
-//	println(stack[len(stack)-1])
-//}
-
-//type Instruction interface {
-//	VMString() string
-//}
-//
-//type InstOperation interface {
-//}
-//
-//type InstFunction struct {
-//	Name         string
-//	Params       []*Param
-//	Instructions []*Instruction
-//	RtnType      string
-//}
-//
-//func (f *InstFunction) VMString() string {
-//	str := "FUCN"
-//
-//}
-//
-//type InstCAll struct {
-//	Callee string
-//	Args[]
-//}
-//
-//type Param struct {
-//	Name string
-//	Type string
-//}

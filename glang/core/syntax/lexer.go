@@ -13,7 +13,7 @@ type lexer struct {
 	source
 	semi bool
 
-	line, col int // position
+	line, col uint // position
 	token     Token
 	lit       string   // valid if tok is _Name, _Literal, or _Semi ("semicolon", "newline", or "EOF"); may be malformed if bad is true
 	bad       bool     // valid if tok is _Literal, true if a syntax error occurred, lit may be malformed
@@ -66,7 +66,7 @@ func TokenizingTest(filename, str string) {
 	result(true, time.Since(start).Seconds())
 }
 
-func (l *lexer) init(r io.Reader, errh func(line, col int, msg string)) {
+func (l *lexer) init(r io.Reader, errh func(line, col uint, msg string)) {
 	l.source.init(r, errh)
 	l.semi = false
 }
@@ -76,7 +76,7 @@ func (l *lexer) errorf(format string, args ...interface{}) {
 }
 
 // errorAtf reports an error at a byte column offset relative to the current Token start.
-func (l *lexer) errorAtf(offset int, format string, args ...interface{}) {
+func (l *lexer) errorAtf(offset uint, format string, args ...interface{}) {
 	l.errh(l.line, l.col+offset, fmt.Sprintf(format, args...))
 }
 
@@ -86,20 +86,20 @@ func (l *lexer) ident() {
 	}
 
 	lit := l.segment()
-	tok := keyword(lit)
+	tok := keyword(string(lit))
 	if tok.isKeyword() {
 		l.token = tok
 		return
 	}
 	l.semi = true
-	l.lit = lit
+	l.lit = string(lit)
 	l.token = _Name
 }
 
 func (l *lexer) setLit(kind LitKind, ok bool) {
 	l.semi = true
 	l.token = _Literal
-	l.lit = l.segment()
+	l.lit = string(l.segment())
 	l.bad = !ok
 	l.kind = kind
 }
@@ -141,6 +141,8 @@ func (l *lexer) next() {
 		l.number(false)
 	case '"':
 		l.stdString()
+	case '`':
+		l.rawString()
 	case '\'':
 		l.rune()
 	case '(':
@@ -386,7 +388,7 @@ func (l *lexer) stdString() {
 	l.setLit(StringLit, ok)
 	seg := l.lit
 	seg = seg[1 : len(seg)-1]
-	str := ""
+	str := make([]byte, len(seg))
 	for i := 0; i < len(seg); i++ {
 		if seg[i] == '\\' {
 			_len := len(seg)
@@ -395,30 +397,30 @@ func (l *lexer) stdString() {
 			}
 			switch seg[i+1] {
 			case '\\':
-				str += "\\"
+				str = append(str, []byte("\\")...)
 			case 'a':
-				str += "\a"
+				str = append(str, []byte("\a")...)
 			case 'b':
-				str += "\b"
+				str = append(str, []byte("\b")...)
 			case 'f':
-				str += "\f"
+				str = append(str, []byte("\f")...)
 			case 'n':
-				str += "\n"
+				str = append(str, []byte("\n")...)
 			case 'r':
-				str += "\r"
+				str = append(str, []byte("\r")...)
 			case 't':
-				str += "\t"
+				str = append(str, []byte("\t")...)
 			case 'v':
-				str += "\v"
+				str = append(str, []byte("\v")...)
 			default:
 				panic("invalid string lit")
 			}
 			i++
 			continue
 		}
-		str += string(seg[i])
+		str = append(str, seg[i])
 	}
-	l.lit = str
+	l.lit = string(str)
 }
 
 func (l *lexer) escape(quote rune) bool {
@@ -474,8 +476,27 @@ func (l *lexer) atIdentChar(first bool) bool {
 	return true
 }
 
+func (l *lexer) rawString() {
+	ok := true
+	l.nextch()
+	for {
+		if l.ch == '`' {
+			l.nextch()
+			break
+		}
+		if l.ch < 0 {
+			l.errorAtf(0, "string not terminated")
+			ok = false
+			break
+		}
+		l.nextch()
+	}
+	l.setLit(StringLit, ok)
+	l.lit = l.lit[1 : len(l.lit)-1]
+}
+
 func lower(ch rune) rune     { return ('a' - 'A') | ch } // returns lower-case ch iff ch is ASCII letter
-func isLetter(ch rune) bool  { return 'a' <= lower(ch) && lower(ch) <= 'z' || ch == '_' }
+func isLetter(ch rune) bool  { return unicode.IsLetter(ch) || ch == '_' }
 func isDecimal(ch rune) bool { return '0' <= ch && ch <= '9' }
 
 //

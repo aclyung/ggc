@@ -2,7 +2,6 @@ package ir
 
 import (
 	vm "almeng.com/glang-vm"
-	"almeng.com/glang/core/ir/types"
 	"fmt"
 )
 
@@ -36,12 +35,32 @@ type (
 
 	InstCALL struct {
 		Callee *Func
-		Args   []Value
 	}
 
 	InstCMP struct {
 	}
+	InstStore struct {
+		Ident string
+	}
 )
+
+func (i InstUnary) String() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (i InstUnary) BCString() string {
+	return fmt.Sprintf("%s", i.inst)
+}
+
+func (i InstStore) String() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (i InstStore) BCString() string {
+	return fmt.Sprintf("STORE %s", i.Ident)
+}
 
 func (i InstCALL) String() string {
 	//TODO implement me
@@ -50,17 +69,8 @@ func (i InstCALL) String() string {
 }
 
 func (i InstCALL) BCString() string {
-	str := ""
-	for _, v := range i.Args {
-		// PUSHES the arguments
-		str += NewPush(v).BCString() + "\n"
-	}
-	numArgs := NewIntValue(types.I64, int64(len(i.Args)))
-	// PUSHES the number of arguments
-	// Callee will pop this number of arguments
-	str += NewPush(numArgs).BCString() + "\n"
-	str += "CALL " + i.Callee.Ident + "\n"
-	return str
+	return "CALL " + i.Callee.Ident + "\n"
+
 }
 
 func (i InstValue) String() string {
@@ -81,7 +91,7 @@ func NewLoad(ident string) InstValue {
 }
 
 func NewCall(callee *Func, args ...Value) InstCALL {
-	return InstCALL{callee, args}
+	return InstCALL{callee}
 }
 
 func NewAdd() InstUnary {

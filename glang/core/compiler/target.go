@@ -16,47 +16,49 @@ type Target struct {
 type Arch string
 
 var archs = map[string]Arch{
-	"i386":    I386,
-	"x86_64":  X86_64,
-	"amd64":   AMD64,
-	"arm":     ARM,
-	"arm64":   ARM64,
-	"aarch64": AARCH64,
+	"386":    I386,
+	"x86_64": X86_64,
+	"amd64":  AMD64,
+	"arm":    ARM,
+	"arm64":  ARM64,
+	//"aarch64": AARCH64,
 }
 
 const (
-	I386    Arch = "i386"
-	X86_64  Arch = "x86_64"
-	AMD64   Arch = X86_64
-	ARM     Arch = "arm"
-	ARM64   Arch = "arm64"
-	AARCH64 Arch = "aarch64"
+	I386   Arch = "386"
+	X86_64 Arch = "x86_64"
+	AMD64  Arch = X86_64
+	ARM    Arch = "arm"
+	ARM64  Arch = "arm64"
+	//AARCH64 Arch = "aarch64"
 )
 
 type Vendor string
 
 var vendors = map[string]Vendor{
-	"pc":    PC,
-	"apple": APPLE,
+	"pc":      PC,
+	"apple":   APPLE,
+	"dynamic": DYNAMIC,
 }
 
 const (
-	PC    Vendor = "pc"
-	APPLE Vendor = "apple"
+	PC      Vendor = "pc"
+	APPLE   Vendor = "apple"
+	DYNAMIC Vendor = "dynamic"
 )
 
 type Sys string
 
 var systems = map[string]Sys{
-	"linux":  LINUX,
-	"darwin": DARWIN,
-	"win32":  WIN32,
+	"linux":   LINUX,
+	"darwin":  DARWIN,
+	"windows": WIN32,
 }
 
 const (
 	LINUX  Sys = "linux"
 	DARWIN Sys = "darwin"
-	WIN32  Sys = "win32"
+	WIN32  Sys = "windows"
 )
 
 func TargetFromTriple(t string) Target {

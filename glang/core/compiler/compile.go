@@ -162,7 +162,6 @@ func (c *Compiler) CompileFunc(space string, ctx *Context, def *syntax.FuncDecl)
 		last = &syntax.ReturnStmt{Return: nil}
 		def.Body.StmtList = append(def.Body.StmtList, last)
 	}
-
 	c.CompileBody(ctx, def.Body, false, nil)
 
 	ret := ctx.Block.Parent.Sig.RetType
