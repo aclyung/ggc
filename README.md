@@ -5,7 +5,6 @@ Glang
 ### Caution
 - The current version of this project is not stable.
 - The executable does contain errors.
-- The legacy version of the project works as expected, but it still contains errors. 
 
 #### Implementations
 - [ ] Expressions
@@ -14,7 +13,8 @@ Glang
   - [X] Parenthesis Expressions
   - [X] Identifier Expressions 
   - [X] Variable assign Expressions 
+- Syntax
 - [X] AST - for supported expressions & syntaxes
 - [X] Tokenizing & Lexer
+- [X] Unicode characters
 - [X] Parser
-  
