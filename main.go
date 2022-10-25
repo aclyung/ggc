@@ -172,9 +172,13 @@ const module = `module main
 	
 	go 1.18
 	
-	replace almeng.com/glang/vm => /Users/seungyeoplee/Workspace/glang/vm
+	replace almeng.com/glang/vm => redirect
 	
 	require almeng.com/glang/vm v0.0.0`
+
+func ModString(vmPath string) string {
+	return strings.ReplaceAll(module, "redirect", vmPath)
+}
 
 const GoPrefix = `package main
 	
@@ -209,9 +213,15 @@ func BuildExec(code []byte) {
 	}
 	defer os.RemoveAll(temp)
 	goCode := GoCode(code)
+	executable, err := os.Executable()
+	if err != nil {
+		return
+	}
 
+	vm_lib := executable[:strings.LastIndex(executable, string(os.PathSeparator))+1] + "vm"
 	// Write go.mod
-	err = ioutil.WriteFile(temp+"/go.mod", []byte(module), 0644)
+	mod := ModString(vm_lib)
+	err = ioutil.WriteFile(temp+"/go.mod", []byte(mod), 0644)
 	if err != nil {
 		panic(err)
 	}
